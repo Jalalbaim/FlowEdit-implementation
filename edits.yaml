@@ -27,18 +27,16 @@
 - input_img: example_images/chinese_gate.png
   source_prompt: A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, standing in front of a temple courtyard.
   target_prompts:
-    - A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, covered with fresh white snow.
-    - A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, at night illuminated by warm lantern light.
     - A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, with modern glass skyscrapers visible in the background.
-  target_codes: [snow, night, skyscrapers]
+  target_codes:
+    - skyscrapers
 
 - input_img: example_images/train_station.png
   source_prompt: A busy train station platform with a blue passenger train, many people waiting or walking, and freight containers in the background.
   target_prompts:
-    - A busy train station platform with a blue passenger train, many people waiting or walking, during heavy rain.
-    - A busy train station platform with a blue passenger train, many people waiting or walking, at night under artificial lights.
     - A busy train station platform with a blue passenger train, many people waiting or walking, with a modern high speed train instead of the blue one.
-  target_codes: [rain, night, high_speed_train]
+  target_codes:
+    - high_speed_train
 
 - input_img: example_images/mayan_pyramid.png
   source_prompt: A large stone Mayan pyramid standing in an open grassy field under a cloudy sky, with tourists walking around.
