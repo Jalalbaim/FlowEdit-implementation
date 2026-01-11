@@ -33,9 +33,13 @@ if __name__ == "__main__":
 
     if model_type == 'FLUX':
         # pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.float16) 
-        pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.float16)
+        pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.float16, token=os.environ["HF_TOKEN"])
     elif model_type == 'SD3':
-        pipe = StableDiffusion3Pipeline.from_pretrained("stabilityai/stable-diffusion-3-medium-diffusers", torch_dtype=torch.float16)
+        pipe = StableDiffusion3Pipeline.from_pretrained(
+            "stabilityai/stable-diffusion-3-medium-diffusers",
+            torch_dtype=torch.float16,
+            token=os.environ["HF_TOKEN"]
+        )
         #pipe = StableDiffusion3Pipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16)
     else:
         raise NotImplementedError(f"Model type {model_type} not implemented")
