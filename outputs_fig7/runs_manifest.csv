@@ -1,0 +1,2 @@
+run_id,model,method,label,order_idx,exp_yaml,output_dir,template_used,timestamp
+sd3_sdedit_000_SDEdit_0.2,sd3,sdedit,SDEdit_0.2,0,C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\scripts\fig7\exp_generated\sd3\sdedit\sd3_sdedit_000_SDEdit_0.2.yaml,C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\outputs_fig7\sd3\sdedit\sd3_sdedit_000_SDEdit_0.2,C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\SD3_exp.yaml,20260111_171443

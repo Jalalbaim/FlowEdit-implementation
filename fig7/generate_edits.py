@@ -373,9 +373,9 @@ def main() -> None:
             if "rfedit_injection" in overrides:
                 set_any(cfg, ["rfedit_injection", "injection", "injection_scale", "inject"], overrides["rfedit_injection"])
 
-            # Save exp yaml
+            # Save exp yaml (wrap in list to match run_script.py's expected format)
             exp_path = exp_out_dir / model / method / f"{run_id}.yaml"
-            dump_yaml(cfg, exp_path)
+            dump_yaml([cfg], exp_path)
 
             w.writerow([run_id, model, method, label, order_idx, str(exp_path), str(run_dir), template_used, timestamp])
 
