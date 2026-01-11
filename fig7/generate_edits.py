@@ -307,6 +307,12 @@ def main() -> None:
     # Load templates once
     sd3_base = load_yaml(sd3_template)
     flux_base = load_yaml(flux_template)
+    
+    # Handle case where YAML contains a list with single dict
+    if isinstance(sd3_base, list) and len(sd3_base) > 0:
+        sd3_base = sd3_base[0]
+    if isinstance(flux_base, list) and len(flux_base) > 0:
+        flux_base = flux_base[0]
 
     runs = sd3_sweep() + flux_sweep(include_extra_figS3=args.include_extra_figS3)
     if args.skip_irfds:
