@@ -1,28 +1,121 @@
--
-    input_img:  example_images/gas_station.png
-    source_prompt: A gas station with a white and red sign that
-      reads "CAFE" There are several cars parked in front of the gas station, including
-      a white car and a van.
+- input_img: example_images/gas_station.png
+  source_prompt: A gas station with a white and red sign that
+    reads "CAFE" There are several cars parked in front of the gas station, including
+    a white car and a van.
 
-    target_prompts:
+  target_prompts:
     - A gas station with a white and red sign that
       reads "CVPR" There are several cars parked in front of the gas station, including
       a white car and a van.
-    
-    target_codes:
+
+  target_codes:
     - cvpr
 
-- 
+- input_img: example_images/lighthouse.png
+  source_prompt: The image features a tall white lighthouse standing prominently
+    on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated
+    by a bright light, making it a prominent landmark in the scene.
 
-    input_img:  example_images/lighthouse.png
-    source_prompt: The image features a tall white lighthouse standing prominently
-      on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated
-      by a bright light, making it a prominent landmark in the scene.
-
-    target_prompts:
+  target_prompts:
     - The image features Big ben clock tower standing prominently
       on a hill, with a beautiful blue sky in the background. The Big ben clock tower is illuminated
       by a bright light, making it a prominent landmark in the scene.
 
-    target_codes:
+  target_codes:
     - big_ben
+
+- input_img: example_images/chinese_gate.png
+  source_prompt: A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, standing in front of a temple courtyard.
+  target_prompts:
+    - A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, covered with fresh white snow.
+    - A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, at night illuminated by warm lantern light.
+    - A traditional Chinese ceremonial gate with red pillars, ornate painted wooden beams, and a tiled roof, with modern glass skyscrapers visible in the background.
+  target_codes: [snow, night, skyscrapers]
+
+- input_img: example_images/train_station.png
+  source_prompt: A busy train station platform with a blue passenger train, many people waiting or walking, and freight containers in the background.
+  target_prompts:
+    - A busy train station platform with a blue passenger train, many people waiting or walking, during heavy rain.
+    - A busy train station platform with a blue passenger train, many people waiting or walking, at night under artificial lights.
+    - A busy train station platform with a blue passenger train, many people waiting or walking, with a modern high speed train instead of the blue one.
+  target_codes: [rain, night, high_speed_train]
+
+- input_img: example_images/mayan_pyramid.png
+  source_prompt: A large stone Mayan pyramid standing in an open grassy field under a cloudy sky, with tourists walking around.
+  target_prompts:
+    - A large stone Mayan pyramid standing in an open grassy field under a cloudy sky, during a dramatic sunset with orange light.
+    - A large stone Mayan pyramid standing in an open grassy field under a cloudy sky, covered with dense jungle vegetation.
+    - A large stone Mayan pyramid standing in an open grassy field under a cloudy sky, with a light layer of fog.
+  target_codes: [sunset, jungle, fog]
+
+- input_img: example_images/buddha_statue.png
+  source_prompt: A large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings and a blue sky.
+  target_prompts:
+    - A large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings, during sunset with warm orange light.
+    - A large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings, under heavy rain and dark clouds.
+    - A large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings, covered with green moss and plants.
+  target_codes: [sunset, rain, moss]
+
+- input_img: example_images/oktoberfest.png
+  source_prompt: A smiling woman wearing a traditional Bavarian dress holding three large mugs of beer at a festival.
+  target_prompts:
+    - A smiling woman wearing a traditional Bavarian dress holding three large mugs of beer at a festival, with the beer replaced by glasses of lemonade.
+    - A smiling woman wearing a traditional Bavarian dress holding three large mugs of beer at a festival, in winter with snow falling.
+    - A smiling woman wearing a traditional Bavarian dress holding three large mugs of beer at a festival, in a medieval market setting.
+  target_codes: [lemonade, winter, medieval]
+
+- input_img: example_images/porto_river.png
+  source_prompt: A riverside city with colorful buildings on a hillside, a large steel arch bridge, and boats on the water.
+  target_prompts:
+    - A riverside city with colorful buildings on a hillside, a large steel arch bridge, and boats on the water, during sunset with golden light.
+    - A riverside city with colorful buildings on a hillside, a large steel arch bridge, and boats on the water, with a modern glass skyline added behind the city.
+    - A riverside city with colorful buildings on a hillside, a large steel arch bridge, and boats on the water, under heavy fog.
+  target_codes: [sunset, skyline, fog]
+
+- input_img: example_images/boutique.png
+  source_prompt: A small boutique interior with framed artwork on wooden walls, folded clothes on a table, and a jacket hanging in the center.
+  target_prompts:
+    - A small boutique interior with framed artwork on wooden walls, folded clothes on a table, and a jacket hanging in the center, with the walls painted dark blue.
+    - A small boutique interior with framed artwork on wooden walls, folded clothes on a table, and a jacket hanging in the center, decorated for Christmas with lights and ornaments.
+    - A small boutique interior with framed artwork on wooden walls, folded clothes on a table, and a jacket hanging in the center, in a minimalist modern style.
+  target_codes: [blue_walls, christmas, modern]
+
+- input_img: example_images/cruise_ship.png
+  source_prompt: A large white cruise ship sailing near futuristic curved skyscrapers by the sea under a clear blue sky.
+  target_prompts:
+    - A large white cruise ship sailing near futuristic curved skyscrapers by the sea under a clear blue sky, at sunset with orange and pink colors.
+    - A large white cruise ship sailing near futuristic curved skyscrapers by the sea under a clear blue sky, during a storm with dark clouds and rough waves.
+    - A large white cruise ship sailing near futuristic curved skyscrapers by the sea under a clear blue sky, with the skyscrapers replaced by traditional low buildings.
+  target_codes: [sunset, storm, traditional_buildings]
+
+- input_img: example_images/graffiti_tunnel.png
+  source_prompt: An old concrete tunnel entrance with graffiti on the wall, worn textures, and a dark passage inside.
+  target_prompts:
+    - An old concrete tunnel entrance with graffiti on the wall, worn textures, and a dark passage inside, with fresh colorful graffiti painted on the walls.
+    - An old concrete tunnel entrance with graffiti on the wall, worn textures, and a dark passage inside, covered with green vines and plants.
+    - An old concrete tunnel entrance with graffiti on the wall, worn textures, and a dark passage inside, at night illuminated by neon lights.
+  target_codes: [fresh_graffiti, vines, neon]
+
+- input_img: example_images/bicycle_beach.png
+  source_prompt: A white bicycle standing on a rocky beach next to a wooden sea barrier, with the ocean in the background.
+  target_prompts:
+    - A white bicycle standing on a rocky beach next to a wooden sea barrier, with the ocean in the background, during sunset with orange light.
+    - A white bicycle standing on a rocky beach next to a wooden sea barrier, with the ocean in the background, in winter with snow on the ground.
+    - A white bicycle standing on a rocky beach next to a wooden sea barrier, with the ocean in the background, during a storm with dark clouds and rough waves.
+  target_codes: [sunset, winter, storm]
+
+- input_img: example_images/soldiers.png
+  source_prompt: A group of soldiers wearing camouflage uniforms and helmets, holding rifles, crouching behind rocks during a training exercise.
+  target_prompts:
+    - A group of soldiers wearing camouflage uniforms and helmets, holding rifles, crouching behind rocks during a training exercise, in heavy rain.
+    - A group of soldiers wearing camouflage uniforms and helmets, holding rifles, crouching behind rocks during a training exercise, at night with low light.
+    - A group of soldiers wearing camouflage uniforms and helmets, holding rifles, crouching behind rocks during a training exercise, in a snowy environment.
+  target_codes: [rain, night, snow]
+
+- input_img: example_images/castle.png
+  source_prompt: A large fairytale-style stone castle with towers and spires, standing on a forested hill under a clear blue sky.
+  target_prompts:
+    - A large fairytale-style stone castle with towers and spires, standing on a forested hill under a clear blue sky, at sunset with warm light.
+    - A large fairytale-style stone castle with towers and spires, standing on a forested hill under a clear blue sky, during winter with snow on the roofs.
+    - A large fairytale-style stone castle with towers and spires, standing on a forested hill under a clear blue sky, surrounded by fog.
+  target_codes: [sunset, winter, fog]
