@@ -1,16 +1,9 @@
-- input_img: example_images/gas_station.png
-  source_prompt: A gas station with a white and red sign that reads "CAFE". There are several cars parked in front of the gas station, including a white car and a van.
+- input_img: example_images/buddha_statue.png
+  source_prompt: The image shows a large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings around it and a clear blue sky in the background.
   target_prompts:
-    - A gas station with a white and red sign that reads "CVPR". There are several cars parked in front of the gas station, including a white car and a van.
+    - The image shows a large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings around it, and a gentle floating golden aura surrounding the statue, with small glowing particles drifting slowly in the air around it.
   target_codes:
-    - cvpr
-
-- input_img: example_images/lighthouse.png
-  source_prompt: The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated by a bright light, making it a prominent landmark in the scene.
-  target_prompts:
-    - The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background. The Big Ben clock tower is illuminated by a bright light, making it a prominent landmark in the scene.
-  target_codes:
-    - big_ben
+    - golden_aura
 
 - input_img: example_images/chinese_gate.png
   source_prompt: The image shows a traditional Chinese ceremonial gate with bright red pillars, ornate painted wooden beams with decorative patterns, and a tiled roof, standing at the entrance of a temple courtyard.
@@ -20,25 +13,11 @@
     - skyscrapers
 
 - input_img: example_images/train_station.png
-  source_prompt: The image shows a busy train station platform with a blue passenger train stopped along the platform. Many people are walking or waiting, and there are freight containers and rail infrastructure visible in the background.
+  source_prompt: A busy train station with a blue passenger train stopped at the platform, people walking and boarding the train, and a long freight train in the background carrying shipping containers labeled "MAERSK", with hills and industrial buildings in the distance, realistic photo, natural lighting.
   target_prompts:
-    - The image shows a busy train station platform with a modern high speed train stopped along the platform. Many people are walking or waiting, and there are freight containers and rail infrastructure visible in the background.
+    - A busy train station with a blue passenger train stopped at the platform, people walking and boarding the train, and a long freight train in the background carrying shipping containers labeled "IPP" instead of "MAERSK", with the "IPP" text matching the original font, size, color, perspective, lighting, and level of wear, realistic photo, natural lighting.
   target_codes:
-    - high_speed_train
-
-- input_img: example_images/mayan_pyramid.png
-  source_prompt: The image features a large stone Mayan pyramid standing in an open grassy field under a cloudy sky. Several tourists are walking around the pyramid, and the wide scene emphasizes the monument’s stepped architecture.
-  target_prompts:
-    - The image features a large stone Mayan pyramid standing in an open grassy field during a dramatic sunset with warm orange light. Several tourists are walking around the pyramid, and the wide scene emphasizes the monument’s stepped architecture.
-  target_codes:
-    - sunset
-
-- input_img: example_images/buddha_statue.png
-  source_prompt: The image shows a large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings around it and a clear blue sky in the background.
-  target_prompts:
-    - The image shows a large smiling Buddha statue sitting above a temple entrance, with decorative stone carvings around it, during sunset with warm orange light.
-  target_codes:
-    - sunset
+    - IPP
 
 - input_img: example_images/oktoberfest.png
   source_prompt: The image shows a smiling woman wearing a traditional Bavarian dress at a festival. She is holding three large glass mugs of beer, and the scene has a lively outdoor event atmosphere.
@@ -47,12 +26,12 @@
   target_codes:
     - lemonade
 
-- input_img: example_images/porto_river.png
-  source_prompt: The image shows a riverside city with colorful buildings stacked on a hillside, a large steel arch bridge spanning the river, and boats on the water under a bright sky.
+- input_img: example_images/mayan_pyramid.png
+  source_prompt: The image features a large stone Mayan pyramid standing in an open grassy field. Several tourists are walking around the pyramid, and the wide scene emphasizes the monument’s stepped architecture.
   target_prompts:
-    - The image shows a riverside city with colorful buildings stacked on a hillside, a large steel arch bridge spanning the river, and boats on the water during sunset with golden light.
+    - The image features a large stone Mayan pyramid standing in an open grassy field, with a bright glowing light emerging from the top chamber of the pyramid, casting visible light rays down the steps and onto the grass.
   target_codes:
-    - sunset
+    - light
 
 - input_img: example_images/boutique.png
   source_prompt: The image shows a small boutique interior with framed artwork on wooden walls, folded clothes displayed on a central table, and a jacket hanging in the middle of the room. The space looks warm and carefully arranged.
@@ -95,3 +74,17 @@
     - The image shows a large fairytale-style stone castle with towers and spires standing on a forested hill during winter, with snow on the roofs and surrounding landscape.
   target_codes:
     - winter
+
+- input_img: example_images/gas_station.png
+  source_prompt: A gas station with a white and red sign that reads "CAFE". There are several cars parked in front of the gas station, including a white car and a van.
+  target_prompts:
+    - A gas station with a white and red sign that reads "CVPR". There are several cars parked in front of the gas station, including a white car and a van.
+  target_codes:
+    - cvpr
+
+- input_img: example_images/lighthouse.png
+  source_prompt: The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated by a bright light, making it a prominent landmark in the scene.
+  target_prompts:
+    - The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background. The Big Ben clock tower is illuminated by a bright light, making it a prominent landmark in the scene.
+  target_codes:
+    - big_ben
