@@ -1,19 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-03_plot_fig7.py
-
-Reads outputs_fig7/metrics_agg.csv and produces a 2-panel plot similar to Fig.7:
-  - Left: Stable Diffusion 3
-  - Right: FLUX
-
-Run (from repo root):
-  python scripts/fig7/03_plot_fig7.py \
-    --metrics outputs_fig7/metrics_agg.csv \
-    --out outputs_fig7/fig7_repro.png
-"""
-
 from __future__ import annotations
 
 import argparse

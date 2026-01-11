@@ -1,28 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-02_compute_metrics.py
-
-Computes:
-  - CLIP-T: similarity(edited_image, target_prompt)  (higher is better)
-  - LPIPS: distance(source_image, edited_image)      (lower is better)
-
-Inputs:
-  - outputs_fig7/runs_manifest.csv from script 01
-  - the same edits YAML you used to run the edits (dataset file)
-
-Outputs:
-  - outputs_fig7/metrics_per_case.csv
-  - outputs_fig7/metrics_agg.csv
-
-Run (from repo root):
-  python scripts/fig7/02_compute_metrics.py \
-    --manifest outputs_fig7/runs_manifest.csv \
-    --edits_yaml Data/edits.yaml \
-    --device cuda
-"""
-
 from __future__ import annotations
 
 import argparse

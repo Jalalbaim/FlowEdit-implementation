@@ -1,22 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-01_generate_edits.py
-
-Creates a sweep of experiment YAMLs (Appendix B: Tabs S1–S4) and runs the repo's
-`run_script.py` for each configuration, saving outputs into separate folders.
-
-Run (from repo root):
-  python scripts/fig7/01_generate_edits.py \
-    --sd3_template SD3_exp.yaml \
-    --flux_template FLUX_exp.yaml \
-    --out_root outputs_fig7
-
-It writes:
-  outputs_fig7/runs_manifest.csv
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -30,10 +11,6 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import yaml
 
-
-# -------------------------
-# YAML editing helpers
-# -------------------------
 
 def _iter_dict_paths(d: Any, prefix: Tuple[str, ...] = ()) -> Iterable[Tuple[Tuple[str, ...], Any]]:
     """Yield (path, value) for every key in nested dicts."""
@@ -80,11 +57,7 @@ def _set_by_path(root: Any, path: Tuple[str, ...], value: Any) -> None:
 
 
 def set_any(cfg: Dict[str, Any], key_candidates: List[str], value: Any) -> None:
-    """
-    Set a config value by searching (recursively) for the first matching key name.
-    If nothing is found, creates cfg[key_candidates[0]] at the top-level.
-    Matching is case-insensitive.
-    """
+
     candidates_lc = {k.lower() for k in key_candidates}
 
     # Try recursive match first
@@ -109,18 +82,12 @@ def dump_yaml(obj: Dict[str, Any], p: Path) -> None:
         yaml.safe_dump(obj, f, sort_keys=False, allow_unicode=True)
 
 
-# -------------------------
-# Hyperparameter grids (Appendix B)
-# -------------------------
-
 def sd3_sweep() -> List[Dict[str, Any]]:
-    # Tab S1 (SD3): T=50
-    # SDEdit nmax: 10..40 step 5 (strength 0.2..0.8)
-    # ODE Inv and FlowEdit: nmax=33, cfg_src=3.5, cfg_tgt in {13.5, 16.5, 19.5}
+
     runs: List[Dict[str, Any]] = []
 
     # SDEdit
-    nmax_list = [10, 15, 20, 25, 30, 35, 40]
+    nmax_list = [10, 25, 40]
     for i, nmax in enumerate(nmax_list):
         strength = 0.1 * (i + 2)  # 0.2..0.8 (for labeling only)
         runs.append({
@@ -180,12 +147,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
 
 
 def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
-    # Tabs S2–S4 (FLUX): T=28
-    # SDEdit nmax {7,14,21} (strength {0.25,0.5,0.75})
-    # ODE Inv: nmax 24 (and optionally 20 for Fig S3), cfg_src 1.5, cfg_tgt {3.5,4.5,5.5}
-    # FlowEdit: nmax 24, cfg_src 1.5, cfg_tgt {3.5,4.5,5.5}
-    # RF-Inv: s=0, tau {8,7,6}, eta {0.9,1.0} (we include 0.9; include 1.0 only if include_extra_figS3)
-    # RF Edit: steps=30, guidance=2, injection {2,3,4,5}
+
     runs: List[Dict[str, Any]] = []
 
     # SDEdit
