@@ -255,8 +255,17 @@ def FlowEditFLUX(pipe,
         max_sequence_length=512,
     )
 
-    x_src, latent_src_image_ids = pipe.prepare_latents(batch_size= x_src.shape[0], num_channels_latents=num_channels_latents, height=orig_height, width=orig_width, dtype=x_src.dtype, device=x_src.device, generator=None,latents=x_src)
+    x_src, _ = pipe.prepare_latents(batch_size= x_src.shape[0], num_channels_latents=num_channels_latents, height=orig_height, width=orig_width, dtype=x_src.dtype, device=x_src.device, generator=None,latents=x_src)
     x_src_packed = pipe._pack_latents(x_src, x_src.shape[0], num_channels_latents, x_src.shape[2], x_src.shape[3])
+    
+    # Generate image_ids for packed latents
+    latent_src_image_ids = pipe._prepare_latent_image_ids(
+        x_src_packed.shape[0],
+        x_src_packed.shape[1],
+        x_src_packed.shape[2],
+        x_src.device,
+        x_src.dtype,
+    )
     latent_tar_image_ids = latent_src_image_ids
 
     # 5. Prepare timesteps
