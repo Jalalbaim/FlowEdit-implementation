@@ -103,6 +103,9 @@ def calc_v_flux(pipe, latents, prompt_embeds, pooled_prompt_embeds, guidance, te
             joint_attention_kwargs=None,
             return_dict=False,
         )[0]
+    
+    # Clear cache to free memory
+    torch.cuda.empty_cache()
 
     return noise_pred
 

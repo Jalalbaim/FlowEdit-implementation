@@ -48,8 +48,12 @@ if __name__ == "__main__":
     #pipe = pipe.to(device)
     
     if torch.cuda.is_available():
-        # Offload CPU/GPU pour économiser la VRAM
-        pipe.enable_model_cpu_offload()
+        # Pour FLUX : utiliser sequential offload pour économiser plus de mémoire
+        if model_type == 'FLUX':
+            pipe.enable_sequential_cpu_offload()
+        else:
+            # Offload CPU/GPU pour économiser la VRAM
+            pipe.enable_model_cpu_offload()
 
         # Optionnel : activer le slicing/tiling directement sur le VAE
         if hasattr(pipe, "vae"):
@@ -57,6 +61,14 @@ if __name__ == "__main__":
                 pipe.vae.enable_slicing()
             if hasattr(pipe.vae, "enable_tiling"):
                 pipe.vae.enable_tiling()
+        
+        # Pour FLUX : Activer attention slicing pour économiser la mémoire
+        if model_type == 'FLUX':
+            if hasattr(pipe, "enable_attention_slicing"):
+                pipe.enable_attention_slicing(1)
+            # Activer la fragmentation de segments pour CUDA
+            import os
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
     else:
         pipe = pipe.to("cpu")
 
@@ -168,6 +180,10 @@ if __name__ == "__main__":
                     f.write(f"Target prompt: {tar_prompt}\n")
                     f.write(f"Seed: {seed}\n")
                     f.write(f"Sampler type: {model_type}\n")
+                
+                # Free memory after each image
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
                 
 
 

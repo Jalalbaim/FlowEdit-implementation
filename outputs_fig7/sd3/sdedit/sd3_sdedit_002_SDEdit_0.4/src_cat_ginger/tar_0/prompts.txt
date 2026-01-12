@@ -1,0 +1,4 @@
+Source prompt: An orange and white cat sitting.
+Target prompt: A tiger sitting.
+Seed: 42
+Sampler type: SD3
