@@ -251,6 +251,8 @@ def main() -> None:
                     help="Skip iRFDS run (if your run_script.py doesn't support it).")
     ap.add_argument("--dry_run", action="store_true",
                     help="Only generate YAMLs + manifest, do not call run_script.py.")
+    ap.add_argument("--model", type=str, choices=["sd3", "flux", "both"], default="both",
+                    help="Which model to run: 'sd3', 'flux', or 'both' (default: both)")
     args = ap.parse_args()
 
     repo_root = Path(".").resolve()
@@ -266,17 +268,25 @@ def main() -> None:
     if not (repo_root / "run_script.py").exists():
         raise FileNotFoundError("You must run this from the FlowEdit repo root (run_script.py not found).")
 
-    # Load templates once
-    sd3_base = load_yaml(sd3_template)
-    flux_base = load_yaml(flux_template)
+    # Load templates and generate runs based on selected model
+    runs = []
+    sd3_base = None
+    flux_base = None
     
-    # Handle case where YAML contains a list with single dict
-    if isinstance(sd3_base, list) and len(sd3_base) > 0:
-        sd3_base = sd3_base[0]
-    if isinstance(flux_base, list) and len(flux_base) > 0:
-        flux_base = flux_base[0]
-
-    runs = sd3_sweep() + flux_sweep(include_extra_figS3=args.include_extra_figS3)
+    if args.model in ["sd3", "both"]:
+        sd3_base = load_yaml(sd3_template)
+        # Handle case where YAML contains a list with single dict
+        if isinstance(sd3_base, list) and len(sd3_base) > 0:
+            sd3_base = sd3_base[0]
+        runs.extend(sd3_sweep())
+    
+    if args.model in ["flux", "both"]:
+        flux_base = load_yaml(flux_template)
+        # Handle case where YAML contains a list with single dict
+        if isinstance(flux_base, list) and len(flux_base) > 0:
+            flux_base = flux_base[0]
+        runs.extend(flux_sweep(include_extra_figS3=args.include_extra_figS3))
+    
     if args.skip_irfds:
         runs = [r for r in runs if r["method"] != "irfds"]
 

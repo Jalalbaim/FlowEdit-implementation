@@ -21,10 +21,6 @@ from transformers import CLIPModel, CLIPProcessor
 import lpips
 
 
-# -------------------------
-# Data parsing (edits.yaml)
-# -------------------------
-
 @dataclass(frozen=True)
 class EditCase:
     image_path: Path
@@ -98,10 +94,6 @@ def load_edits_yaml(edits_path: Path) -> List[EditCase]:
         raise ValueError(f"No cases parsed from: {edits_path}")
     return cases
 
-
-# -------------------------
-# Image + metrics
-# -------------------------
 
 def pil_rgb(p: Path) -> Image.Image:
     return Image.open(p).convert("RGB")
