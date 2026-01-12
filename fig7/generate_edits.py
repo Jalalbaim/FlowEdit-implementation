@@ -87,7 +87,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
     runs: List[Dict[str, Any]] = []
 
     # SDEdit
-    nmax_list = [10, 25, 40]
+    nmax_list = [10, 20, 30]
     for i, nmax in enumerate(nmax_list):
         strength = 0.1 * (i + 2)  # 0.2..0.8 (for labeling only)
         runs.append({
@@ -103,7 +103,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
         })
 
     # ODE inversion (3 target CFG)
-    for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
+    for j, cfg_tgt in enumerate([13.5, 19.5]):
         runs.append({
             "model": "sd3",
             "method": "ode_inv",
@@ -111,25 +111,25 @@ def sd3_sweep() -> List[Dict[str, Any]]:
             "order_idx": j,
             "overrides": {
                 "T": 50,
-                "n_max": 33,
+                "n_max": 25,
                 "cfg_src": 3.5,
                 "cfg_tgt": cfg_tgt,
             }
         })
 
-    # iRFDS (official impl / hypers): we just set method; your run_script.py must support it
-    runs.append({
-        "model": "sd3",
-        "method": "irfds",
-        "label": "iRFDS_official",
-        "order_idx": 0,
-        "overrides": {
-            "T": 50,
-        }
-    })
+    # # iRFDS (official impl / hypers): we just set method; your run_script.py must support it
+    # runs.append({
+    #     "model": "sd3",
+    #     "method": "irfds",
+    #     "label": "iRFDS_official",
+    #     "order_idx": 0,
+    #     "overrides": {
+    #         "T": 50,
+    #     }
+    # })
 
     # FlowEdit (3 target CFG)
-    for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
+    for j, cfg_tgt in enumerate([13.5, 19.5]):
         runs.append({
             "model": "sd3",
             "method": "flowedit",
@@ -137,7 +137,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
             "order_idx": j,
             "overrides": {
                 "T": 50,
-                "n_max": 33,
+                "n_max": 25,
                 "cfg_src": 3.5,
                 "cfg_tgt": cfg_tgt,
             }
@@ -169,7 +169,7 @@ def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
     # ODE inv
     ode_nmax_values = [24] + ([20] if include_extra_figS3 else [])
     for ode_nmax in ode_nmax_values:
-        for j, cfg_tgt in enumerate([3.5, 4.5, 5.5]):
+        for j, cfg_tgt in enumerate([3.5, 5.5]):
             runs.append({
                 "model": "flux",
                 "method": "ode_inv",
@@ -184,7 +184,7 @@ def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
             })
 
     # FlowEdit
-    for j, cfg_tgt in enumerate([3.5, 4.5, 5.5]):
+    for j, cfg_tgt in enumerate([3.5, 5.5]):
         runs.append({
             "model": "flux",
             "method": "flowedit",
@@ -198,28 +198,28 @@ def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
             }
         })
 
-    # RF-Inversion
-    etas = [0.9] + ([1.0] if include_extra_figS3 else [])
-    taus = [8, 7, 6]
-    idx = 0
-    for eta in etas:
-        for tau in taus:
-            runs.append({
-                "model": "flux",
-                "method": "rf_inv",
-                "label": f"RFInv_eta{eta:g}_tau{tau}",
-                "order_idx": idx,
-                "overrides": {
-                    "T": 28,
-                    "rf_s": 0,          # starting time
-                    "rf_tau": tau,      # stopping time
-                    "rf_eta": eta,      # strength
-                }
-            })
-            idx += 1
+    # # RF-Inversion
+    # etas = [0.9] + ([1.0] if include_extra_figS3 else [])
+    # taus = [8, 7, 6]
+    # idx = 0
+    # for eta in etas:
+    #     for tau in taus:
+    #         runs.append({
+    #             "model": "flux",
+    #             "method": "rf_inv",
+    #             "label": f"RFInv_eta{eta:g}_tau{tau}",
+    #             "order_idx": idx,
+    #             "overrides": {
+    #                 "T": 28,
+    #                 "rf_s": 0,          # starting time
+    #                 "rf_tau": tau,      # stopping time
+    #                 "rf_eta": eta,      # strength
+    #             }
+    #         })
+    #         idx += 1
 
     # RF Edit
-    for k, inj in enumerate([2, 3, 4, 5]):
+    for k, inj in enumerate([2, 3, 5]):
         runs.append({
             "model": "flux",
             "method": "rf_edit",
