@@ -1,4 +1,0 @@
-Source prompt: A small chocolate cupcake with light brown whipped cream on top.
-Target prompt: A small vanilla cupcake with whipped cream on top.
-Seed: 42
-Sampler type: SD3

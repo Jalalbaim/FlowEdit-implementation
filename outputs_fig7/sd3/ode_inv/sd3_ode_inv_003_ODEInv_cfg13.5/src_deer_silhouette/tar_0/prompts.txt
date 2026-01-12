@@ -1,4 +1,0 @@
-Source prompt: A silhouette of a deer standing on a grassy bank near a lake. The scene is set during sunset, with the sun casting a warm glow over it.
-Target prompt: A silhouette of a male deer with beautiful antlers standing on a grassy bank near a lake. The scene is set during sunset, with the sun casting a warm glow over it.
-Seed: 42
-Sampler type: SD3

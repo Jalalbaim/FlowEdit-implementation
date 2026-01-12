@@ -7,7 +7,7 @@
   src_guidance_scale: 3.5
   tar_guidance_scale: 13.5
   n_min: 0
-  n_max: 10
+  n_max: 20
   seed: 42
-  output_dir: C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\outputs_fig7\sd3\sdedit\sd3_sdedit_000_SDEdit_0.2
+  output_dir: C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\outputs_fig7\sd3\sdedit\sd3_sdedit_002_SDEdit_0.4
   method: sdedit

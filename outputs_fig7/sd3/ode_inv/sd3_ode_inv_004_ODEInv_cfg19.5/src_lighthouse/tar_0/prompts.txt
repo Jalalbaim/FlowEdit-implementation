@@ -1,4 +1,0 @@
-Source prompt: The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated by a bright light, making it a prominent landmark in the scene.
-Target prompt: The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background. The Big Ben clock tower is illuminated by a bright light, making it a prominent landmark in the scene.
-Seed: 42
-Sampler type: SD3

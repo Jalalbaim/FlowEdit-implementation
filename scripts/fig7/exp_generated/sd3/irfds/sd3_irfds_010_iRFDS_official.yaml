@@ -7,7 +7,7 @@
   src_guidance_scale: 3.5
   tar_guidance_scale: 13.5
   n_min: 0
-  n_max: 10
+  n_max: 33
   seed: 42
-  output_dir: C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\outputs_fig7\sd3\sdedit\sd3_sdedit_000_SDEdit_0.2
-  method: sdedit
+  output_dir: C:\Users\JALAL\OneDrive\Documents\FlowEdit-implementation\outputs_fig7\sd3\irfds\sd3_irfds_010_iRFDS_official
+  method: irfds

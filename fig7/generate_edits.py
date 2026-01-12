@@ -321,13 +321,13 @@ def main() -> None:
 
             # Standard overrides
             if "T" in overrides:
-                set_any(cfg, ["T", "t_steps", "num_steps", "num_inference_steps"], overrides["T"])
+                set_any(cfg, ["T", "t_steps", "num_steps", "num_inference_steps", "T_steps"], overrides["T"])
             if "n_max" in overrides:
                 set_any(cfg, ["n_max", "nmax"], overrides["n_max"])
             if "cfg_src" in overrides:
-                set_any(cfg, ["cfg_src", "cfg_source", "cfg@source", "guidance_scale_src", "source_cfg"], overrides["cfg_src"])
+                set_any(cfg, ["cfg_src", "cfg_source", "cfg@source", "guidance_scale_src", "source_cfg", "src_guidance_scale"], overrides["cfg_src"])
             if "cfg_tgt" in overrides:
-                set_any(cfg, ["cfg_tgt", "cfg_target", "cfg@target", "guidance_scale_tgt", "target_cfg"], overrides["cfg_tgt"])
+                set_any(cfg, ["cfg_tgt", "cfg_target", "cfg@target", "guidance_scale_tgt", "target_cfg", "tar_guidance_scale"], overrides["cfg_tgt"])
 
             # RF-Inversion overrides
             if "rf_s" in overrides:
