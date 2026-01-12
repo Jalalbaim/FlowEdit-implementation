@@ -153,8 +153,9 @@ if __name__ == "__main__":
                 tar_prompt_txt = str(tar_num)
                 
                 # Use the configured output directory or fallback to default
+                # Always include subdirectories for source and target to avoid overwriting
                 if output_base_dir:
-                    save_dir = f"{output_base_dir}/"
+                    save_dir = f"{output_base_dir}/src_{src_prompt_txt}/tar_{tar_prompt_txt}/"
                 else:
                     save_dir = f"outputs/{exp_name}/{model_type}/src_{src_prompt_txt}/tar_{tar_prompt_txt}/"
                 
