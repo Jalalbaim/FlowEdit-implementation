@@ -73,6 +73,9 @@ if __name__ == "__main__":
         n_min = exp_dict["n_min"]
         n_max = exp_dict["n_max"]
         seed = exp_dict["seed"]
+        
+        # Get output directory from config, fallback to "outputs" if not specified
+        output_base_dir = exp_dict.get("output_dir", exp_dict.get("out_dir", exp_dict.get("save_dir", exp_dict.get("results_dir", "outputs"))))
 
         # set seed
         random.seed(seed)
@@ -149,8 +152,12 @@ if __name__ == "__main__":
 
                 tar_prompt_txt = str(tar_num)
                 
-                # make sure to create the directories before saving
-                save_dir = f"outputs/{exp_name}/{model_type}/src_{src_prompt_txt}/tar_{tar_prompt_txt}"
+                # Use the configured output directory or fallback to default
+                if output_base_dir:
+                    save_dir = f"{output_base_dir}/"
+                else:
+                    save_dir = f"outputs/{exp_name}/{model_type}/src_{src_prompt_txt}/tar_{tar_prompt_txt}/"
+                
                 os.makedirs(save_dir, exist_ok=True)
                 
                 image_tar[0].save(f"{save_dir}/output_T_steps_{T_steps}_n_avg_{n_avg}_cfg_enc_{src_guidance_scale}_cfg_dec{tar_guidance_scale}_n_min_{n_min}_n_max_{n_max}_seed{seed}.png")
