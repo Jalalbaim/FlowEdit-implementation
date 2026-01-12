@@ -27,6 +27,7 @@ class EditCase:
     source_prompt: str
     target_prompt: str
     target_code: str
+    target_index: int  # Index of this target in the list (for tar_0, tar_1, etc.)
 
 
 def _first_present(d: Dict[str, Any], keys: List[str]) -> Optional[Any]:
@@ -54,7 +55,7 @@ def load_edits_yaml(edits_path: Path) -> List[EditCase]:
         if not isinstance(it, dict):
             continue
 
-        img = _first_present(it, ["image_path", "img_path", "image", "path", "image_file"])
+        img = _first_present(it, ["image_path", "img_path", "image", "path", "image_file", "input_img", "input_image"])
         if img is None:
             continue
 
@@ -70,25 +71,25 @@ def load_edits_yaml(edits_path: Path) -> List[EditCase]:
         targets   = _first_present(it, ["targets", "target_list", "edits", "target"])
 
         if isinstance(targets, list) and all(isinstance(x, dict) for x in targets):
-            for t in targets:
+            for idx, t in enumerate(targets):
                 tp = _first_present(t, ["prompt", "target_prompt", "text"])
                 tc = _first_present(t, ["code", "target_code", "name", "tag"])
                 if tp is None or tc is None:
                     continue
-                cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc)))
+                cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc), idx))
         elif isinstance(t_prompts, list) and isinstance(t_codes, list) and len(t_prompts) == len(t_codes):
-            for tp, tc in zip(t_prompts, t_codes):
-                cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc)))
+            for idx, (tp, tc) in enumerate(zip(t_prompts, t_codes)):
+                cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc), idx))
         elif isinstance(t_prompts, list):
             # no explicit codes → create codes from index
             for j, tp in enumerate(t_prompts):
-                cases.append(EditCase(Path(img), str(src_prompt), str(tp), f"t{j:02d}"))
+                cases.append(EditCase(Path(img), str(src_prompt), str(tp), f"t{j:02d}", j))
         else:
             # single target?
             tp = _first_present(it, ["target_prompt", "tgt_prompt"])
             tc = _first_present(it, ["target_code", "tgt_code"])
             if tp is not None and tc is not None:
-                cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc)))
+                cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc), 0))
 
     if not cases:
         raise ValueError(f"No cases parsed from: {edits_path}")
@@ -101,26 +102,49 @@ def pil_rgb(p: Path) -> Image.Image:
 
 def find_edited_image(run_dir: Path, case: EditCase) -> Optional[Path]:
     """
-    Best-effort matcher: find an output file containing the target_code.
-    If multiple matches, pick the shortest path (usually the "main" output).
+    Best-effort matcher: find an output file for this case.
+    Looks for images in subdirectories matching the source image and target index.
     """
     if not run_dir.exists():
         return None
 
     exts = (".png", ".jpg", ".jpeg", ".webp")
+    stem = case.image_path.stem.lower()
+    
+    # Primary strategy: look for src_<stem>/tar_<idx>/ structure
+    tar_folder_name = f"tar_{case.target_index}"
+    src_pattern = f"src_{stem}"
+    
+    for candidate in run_dir.rglob("*"):
+        if candidate.suffix.lower() not in exts:
+            continue
+        
+        parent_path = str(candidate.parent).lower()
+        
+        # Check if this is in the right tar_X folder for the right source image
+        if tar_folder_name in parent_path and src_pattern in parent_path:
+            if "output" in candidate.name.lower():
+                return candidate
+    
+    # Fallback: less strict matching
     candidates = [p for p in run_dir.rglob("*") if p.suffix.lower() in exts]
-
-    code = case.target_code.lower()
-    matches = [p for p in candidates if code in p.name.lower()]
-
+    
+    # Try to find based on source image name
+    matches = [p for p in candidates 
+              if stem in str(p.parent).lower() or stem in p.name.lower()]
+    
     if not matches:
-        # fallback: try using image stem too
-        stem = case.image_path.stem.lower()
-        matches = [p for p in candidates if (stem in p.name.lower())]
+        # Last resort: just take any PNG/JPG in subdirectories
+        matches = [p for p in candidates if p.parent != run_dir]
 
     if not matches:
         return None
 
+    # Prefer files with "output" in the name (generated images)
+    output_matches = [p for p in matches if "output" in p.name.lower()]
+    if output_matches:
+        matches = output_matches
+    
     matches.sort(key=lambda p: (len(str(p)), str(p)))
     return matches[0]
 
