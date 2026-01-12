@@ -1,6 +1,70 @@
+- input_img: example_images/castle.png
+  source_prompt:
+    A majestic castle with a tall, pointed roof, situated on a hillside. The sky above the castle is filled with clouds, creating a dramatic atmosphere.
+    There are several windows on the castle, with some located on the lower levels and others on the upper levels.
+
+  target_prompts:
+    - A majestic castle made out of lego bricks with a tall, pointed roof, situated on a hillside. The sky above the lego castle is filled with clouds, creating a dramatic atmosphere.
+      There are several windows on the lego castle, with some located on the lower levels and others on the upper levels.
+
+  target_codes:
+    - lego_castle
+
+- input_img: example_images/cat_ginger.png
+  source_prompt: An orange and white cat sitting.
+
+  target_prompts:
+    - A tiger sitting.
+
+  target_codes:
+    - tiger
+
+- input_img: example_images/cupcake.png
+  source_prompt: A small chocolate cupcake with light brown whipped cream on top.
+
+  target_prompts:
+    - A small vanilla cupcake with whipped cream on top.
+
+  target_codes:
+    - vanilla
+
+- input_img: example_images/deer_silhouette.png
+  source_prompt: A silhouette of a deer standing on a grassy bank near a lake. The scene is set during sunset, with the sun casting a warm glow over it.
+
+  target_prompts:
+    - A silhouette of a male deer with beautiful antlers standing on a grassy bank near a lake. The scene is set during sunset, with the sun casting a warm glow over it.
+
+  target_codes:
+    - male_deer_antlers
+
+- input_img: example_images/stop.png
+  source_prompt: A stop sign prominently placed in a field of yellow flowers.
+
+  target_prompts:
+    - A sign that says IPP prominently placed in a field of yellow flowers.
+
+  target_codes:
+    - IPP
+
+- input_img: example_images/this_must_be_the_place.png
+  source_prompt: A large, colorful wall with a neon sign that reads "this must be the place."
+
+  target_prompts:
+    - A large, colorful wall with a neon sign that reads "IPP must be the place."
+
+  target_codes:
+    - IPP
+
 - input_img: example_images/gas_station.png
   source_prompt: A gas station with a white and red sign that reads "CAFE". There are several cars parked in front of the gas station, including a white car and a van.
   target_prompts:
     - A gas station with a white and red sign that reads "CVPR". There are several cars parked in front of the gas station, including a white car and a van.
   target_codes:
     - cvpr
+
+- input_img: example_images/lighthouse.png
+  source_prompt: The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated by a bright light, making it a prominent landmark in the scene.
+  target_prompts:
+    - The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background. The Big Ben clock tower is illuminated by a bright light, making it a prominent landmark in the scene.
+  target_codes:
+    - big_ben
