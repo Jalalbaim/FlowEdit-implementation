@@ -1,0 +1,8 @@
+run_id,model,method,label,order_idx,clip_t_mean,lpips_mean,n_cases
+sd3_flowedit_005_Ours_cfg13.5,sd3,flowedit,Ours_cfg13.5,0,0.26084834337234497,0.12263825908303261,8
+sd3_flowedit_006_Ours_cfg19.5,sd3,flowedit,Ours_cfg19.5,1,0.26084834337234497,0.12263825908303261,8
+sd3_ode_inv_003_ODEInv_cfg13.5,sd3,ode_inv,ODEInv_cfg13.5,0,0.26084834337234497,0.12263825908303261,8
+sd3_ode_inv_004_ODEInv_cfg19.5,sd3,ode_inv,ODEInv_cfg19.5,1,0.26084834337234497,0.12263825908303261,8
+sd3_sdedit_000_SDEdit_0.2,sd3,sdedit,SDEdit_0.2,0,0.20611107163131237,0.03526942012831569,8
+sd3_sdedit_001_SDEdit_0.3,sd3,sdedit,SDEdit_0.3,1,0.23011218197643757,0.08483748883008957,8
+sd3_sdedit_002_SDEdit_0.4,sd3,sdedit,SDEdit_0.4,2,0.261889161542058,0.16004603262990713,8

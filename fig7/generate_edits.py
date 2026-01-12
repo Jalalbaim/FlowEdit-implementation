@@ -87,7 +87,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
     runs: List[Dict[str, Any]] = []
 
     # SDEdit
-    nmax_list = [10, 20, 30]
+    nmax_list = [10, 15, 20, 25, 30, 35, 40]
     for i, nmax in enumerate(nmax_list):
         strength = 0.1 * (i + 2)  # 0.2..0.8 (for labeling only)
         runs.append({
@@ -103,7 +103,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
         })
 
     # ODE inversion (3 target CFG)
-    for j, cfg_tgt in enumerate([13.5, 19.5]):
+    for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
         runs.append({
             "model": "sd3",
             "method": "ode_inv",
@@ -111,25 +111,25 @@ def sd3_sweep() -> List[Dict[str, Any]]:
             "order_idx": j,
             "overrides": {
                 "T": 50,
-                "n_max": 25,
+                "n_max": 33,
                 "cfg_src": 3.5,
                 "cfg_tgt": cfg_tgt,
             }
         })
 
-    # # iRFDS (official impl / hypers): we just set method; your run_script.py must support it
-    # runs.append({
-    #     "model": "sd3",
-    #     "method": "irfds",
-    #     "label": "iRFDS_official",
-    #     "order_idx": 0,
-    #     "overrides": {
-    #         "T": 50,
-    #     }
-    # })
+    # iRFDS (official impl / hypers): we just set method; your run_script.py must support it
+    runs.append({
+        "model": "sd3",
+        "method": "irfds",
+        "label": "iRFDS_official",
+        "order_idx": 0,
+        "overrides": {
+            "T": 50,
+        }
+    })
 
     # FlowEdit (3 target CFG)
-    for j, cfg_tgt in enumerate([13.5, 19.5]):
+    for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
         runs.append({
             "model": "sd3",
             "method": "flowedit",
@@ -137,7 +137,7 @@ def sd3_sweep() -> List[Dict[str, Any]]:
             "order_idx": j,
             "overrides": {
                 "T": 50,
-                "n_max": 25,
+                "n_max": 33,
                 "cfg_src": 3.5,
                 "cfg_tgt": cfg_tgt,
             }
@@ -148,55 +148,55 @@ def sd3_sweep() -> List[Dict[str, Any]]:
 
 def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
 
-    runs: List[Dict[str, Any]] = []
+    # runs: List[Dict[str, Any]] = []
 
-    # SDEdit
-    nmax_list = [7, 14, 21]
-    strength_list = [0.25, 0.50, 0.75]
-    for i, (nmax, s) in enumerate(zip(nmax_list, strength_list)):
-        runs.append({
-            "model": "flux",
-            "method": "sdedit",
-            "label": f"SDEdit_{s:g}",
-            "order_idx": i,
-            "overrides": {
-                "T": 28,
-                "n_max": nmax,
-                "cfg_tgt": 5.5,
-            }
-        })
+    # # SDEdit
+    # nmax_list = [7, 14, 21]
+    # strength_list = [0.25, 0.50, 0.75]
+    # for i, (nmax, s) in enumerate(zip(nmax_list, strength_list)):
+    #     runs.append({
+    #         "model": "flux",
+    #         "method": "sdedit",
+    #         "label": f"SDEdit_{s:g}",
+    #         "order_idx": i,
+    #         "overrides": {
+    #             "T": 28,
+    #             "n_max": nmax,
+    #             "cfg_tgt": 5.5,
+    #         }
+    #     })
 
-    # ODE inv
-    ode_nmax_values = [24] + ([20] if include_extra_figS3 else [])
-    for ode_nmax in ode_nmax_values:
-        for j, cfg_tgt in enumerate([3.5, 5.5]):
-            runs.append({
-                "model": "flux",
-                "method": "ode_inv",
-                "label": f"ODEInv_n{ode_nmax}_cfg{cfg_tgt:g}",
-                "order_idx": j,
-                "overrides": {
-                    "T": 28,
-                    "n_max": ode_nmax,
-                    "cfg_src": 1.5,
-                    "cfg_tgt": cfg_tgt,
-                }
-            })
+    # # ODE inv
+    # ode_nmax_values = [24] + ([20] if include_extra_figS3 else [])
+    # for ode_nmax in ode_nmax_values:
+    #     for j, cfg_tgt in enumerate([3.5, 5.5]):
+    #         runs.append({
+    #             "model": "flux",
+    #             "method": "ode_inv",
+    #             "label": f"ODEInv_n{ode_nmax}_cfg{cfg_tgt:g}",
+    #             "order_idx": j,
+    #             "overrides": {
+    #                 "T": 28,
+    #                 "n_max": ode_nmax,
+    #                 "cfg_src": 1.5,
+    #                 "cfg_tgt": cfg_tgt,
+    #             }
+    #         })
 
-    # FlowEdit
-    for j, cfg_tgt in enumerate([3.5, 5.5]):
-        runs.append({
-            "model": "flux",
-            "method": "flowedit",
-            "label": f"Ours_cfg{cfg_tgt:g}",
-            "order_idx": j,
-            "overrides": {
-                "T": 28,
-                "n_max": 24,
-                "cfg_src": 1.5,
-                "cfg_tgt": cfg_tgt,
-            }
-        })
+    # # FlowEdit
+    # for j, cfg_tgt in enumerate([3.5, 5.5]):
+    #     runs.append({
+    #         "model": "flux",
+    #         "method": "flowedit",
+    #         "label": f"Ours_cfg{cfg_tgt:g}",
+    #         "order_idx": j,
+    #         "overrides": {
+    #             "T": 28,
+    #             "n_max": 24,
+    #             "cfg_src": 1.5,
+    #             "cfg_tgt": cfg_tgt,
+    #         }
+    #     })
 
     # # RF-Inversion
     # etas = [0.9] + ([1.0] if include_extra_figS3 else [])
@@ -218,21 +218,21 @@ def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
     #         })
     #         idx += 1
 
-    # RF Edit
-    for k, inj in enumerate([2, 3, 5]):
-        runs.append({
-            "model": "flux",
-            "method": "rf_edit",
-            "label": f"RFEdit_inj{inj}",
-            "order_idx": k,
-            "overrides": {
-                "rfedit_steps": 30,
-                "rfedit_guidance": 2,
-                "rfedit_injection": inj,
-            }
-        })
+    # # RF Edit
+    # for k, inj in enumerate([2, 3, 5]):
+    #     runs.append({
+    #         "model": "flux",
+    #         "method": "rf_edit",
+    #         "label": f"RFEdit_inj{inj}",
+    #         "order_idx": k,
+    #         "overrides": {
+    #             "rfedit_steps": 30,
+    #             "rfedit_guidance": 2,
+    #             "rfedit_injection": inj,
+    #         }
+    #     })
 
-    return runs
+    pass
 
 
 # -------------------------

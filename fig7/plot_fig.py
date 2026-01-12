@@ -23,10 +23,16 @@ STYLE = {
 }
 
 
-def plot_panel(ax, df, title: str, xlim=None, ylim=None):
+def plot_panel(ax, df, title: str, xlim=None, ylim=None, auto_limits=False):
     ax.set_title(title)
     ax.set_xlabel("CLIP →")
     ax.set_ylabel("← LPIPS")
+
+    # Check if dataframe is empty
+    if df.empty:
+        ax.text(0.5, 0.5, "No data available", ha='center', va='center', transform=ax.transAxes)
+        ax.grid(True, alpha=0.25)
+        return
 
     # plot each method, connect by order_idx
     for method, sub in df.groupby("method"):
@@ -43,6 +49,17 @@ def plot_panel(ax, df, title: str, xlim=None, ylim=None):
             label=st["label"],
         )
 
+    if auto_limits and len(df) > 0:
+        # Auto-calculate limits with padding
+        clip_vals = df["clip_t_mean"].values
+        lpips_vals = df["lpips_mean"].values
+        clip_range = clip_vals.max() - clip_vals.min()
+        lpips_range = lpips_vals.max() - lpips_vals.min()
+        clip_pad = clip_range * 0.1 if clip_range > 0 else 0.01
+        lpips_pad = lpips_range * 0.1 if lpips_range > 0 else 0.01
+        xlim = (clip_vals.min() - clip_pad, clip_vals.max() + clip_pad)
+        ylim = (lpips_vals.min() - lpips_pad, lpips_vals.max() + lpips_pad)
+    
     if xlim is not None:
         ax.set_xlim(*xlim)
     if ylim is not None:
@@ -87,10 +104,11 @@ def main():
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), dpi=160)
 
-    plot_panel(axes[0], df_sd3, "Stable Diffusion 3", xlim=(0.329, 0.355), ylim=(0.12, 0.47))
+    # Use auto_limits=True to adjust axes to your actual data
+    plot_panel(axes[0], df_sd3, "Stable Diffusion 3", auto_limits=True)
     dedup_legend(axes[0])
 
-    plot_panel(axes[1], df_flux, "FLUX", xlim=(0.309, 0.345), ylim=(0.10, 0.38))
+    plot_panel(axes[1], df_flux, "FLUX", auto_limits=True)
     dedup_legend(axes[1])
 
     fig.tight_layout()
