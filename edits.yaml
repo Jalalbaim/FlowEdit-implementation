@@ -1,14 +1,3 @@
-- input_img: example_images/bear.png
-
-  source_prompt: A large brown bear walking through a stream of water.
-    The stream appears to be shallow, as the bear is able to walk through it without any difficulty.
-
-  target_prompts:
-    - A large panda bear walking through a stream of water. The stream appears to be shallow, as the panda bear is able to walk through it without any difficulty.
-
-  target_codes:
-    - panda_bear
-
 - input_img: example_images/castle.png
   source_prompt:
     A majestic castle with a tall, pointed roof, situated on a hillside. The sky above the castle is filled with clouds, creating a dramatic atmosphere.
@@ -65,15 +54,6 @@
 
   target_codes:
     - IPP
-
-- input_img: example_images/iguana.png
-  source_prompt: A large orange lizard sitting on a rock near the ocean. The lizard is positioned in the center of the scene, with the ocean waves visible in the background. The rock is located close to the water, providing a picturesque setting for the lizard''s resting spot.
-
-  target_prompts:
-    - A large dragon sitting on a rock near the ocean. The dragon is positioned in the center of the scene, with the ocean waves visible in the background. The rock is located close to the water, providing a picturesque setting for the dragon''s resting spot.
-
-  target_codes:
-    - dragon
 
 - input_img: example_images/gas_station.png
   source_prompt: A gas station with a white and red sign that reads "CAFE". There are several cars parked in front of the gas station, including a white car and a van.
