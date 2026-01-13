@@ -159,11 +159,11 @@ def main():
 
     prompt_src = os.environ.get(
         "PROMPT_SRC",
-        "The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background."
+        "The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background. The lighthouse is illuminated by a bright light, making it a prominent landmark in the scene."
     )
     prompt_tar = os.environ.get(
         "PROMPT_TAR",
-        "The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background."
+        "The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background. The Big Ben clock tower is illuminated by a bright light, making it a prominent landmark in the scene."
     )
 
     T = int(os.environ.get("T", "50"))
@@ -182,7 +182,6 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
-    # pipeline: utiliser fp16 sur GPU, fp32 sur CPU
     if device == "cuda":
         pipe = StableDiffusion3Pipeline.from_pretrained(
             model_id,
