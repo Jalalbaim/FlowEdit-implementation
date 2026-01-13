@@ -86,22 +86,6 @@ def sd3_sweep() -> List[Dict[str, Any]]:
 
     runs: List[Dict[str, Any]] = []
 
-    # SDEdit
-    nmax_list = [10, 15, 20, 25, 30, 35, 40]
-    for i, nmax in enumerate(nmax_list):
-        strength = 0.1 * (i + 2)  # 0.2..0.8 (for labeling only)
-        runs.append({
-            "model": "sd3",
-            "method": "sdedit",
-            "label": f"SDEdit_{strength:.1f}",
-            "order_idx": i,
-            "overrides": {
-                "T": 50,
-                "n_max": nmax,
-                "cfg_tgt": 13.5,
-            }
-        })
-
     # ODE inversion (3 target CFG)
     for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
         runs.append({
@@ -142,6 +126,22 @@ def sd3_sweep() -> List[Dict[str, Any]]:
                 "cfg_tgt": cfg_tgt,
             }
         })
+
+    # # SDEdit
+    # nmax_list = [10, 15, 20, 25, 30, 35, 40]
+    # for i, nmax in enumerate(nmax_list):
+    #     strength = 0.1 * (i + 2)  # 0.2..0.8 (for labeling only)
+    #     runs.append({
+    #         "model": "sd3",
+    #         "method": "sdedit",
+    #         "label": f"SDEdit_{strength:.1f}",
+    #         "order_idx": i,
+    #         "overrides": {
+    #             "T": 50,
+    #             "n_max": nmax,
+    #             "cfg_tgt": 13.5,
+    #         }
+    #     })
 
     return runs
 

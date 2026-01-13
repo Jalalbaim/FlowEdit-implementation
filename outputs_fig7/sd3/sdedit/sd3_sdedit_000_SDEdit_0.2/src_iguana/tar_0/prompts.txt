@@ -1,0 +1,4 @@
+Source prompt: A large orange lizard sitting on a rock near the ocean. The lizard is positioned in the center of the scene, with the ocean waves visible in the background. The rock is located close to the water, providing a picturesque setting for the lizard''s resting spot.
+Target prompt: A large dragon sitting on a rock near the ocean. The dragon is positioned in the center of the scene, with the ocean waves visible in the background. The rock is located close to the water, providing a picturesque setting for the dragon''s resting spot.
+Seed: 42
+Sampler type: SD3

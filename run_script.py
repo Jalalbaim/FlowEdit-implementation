@@ -7,7 +7,7 @@ import random
 import numpy as np
 import yaml
 import os
-from FlowEdit_utils import FlowEditSD3, FlowEditFLUX
+from FlowEdit_utils import FlowEditSD3, FlowEditFLUX, ODEInversionSD3, iRFDSSD3
 
 
 
@@ -86,6 +86,9 @@ if __name__ == "__main__":
         n_max = exp_dict["n_max"]
         seed = exp_dict["seed"]
         
+        # Get method from config (flowedit, ode_inv, irfds, sdedit)
+        method = exp_dict.get("method", "flowedit")  # Default to flowedit if not specified
+        
         # Get output directory from config, fallback to "outputs" if not specified
         output_base_dir = exp_dict.get("output_dir", exp_dict.get("out_dir", exp_dict.get("save_dir", exp_dict.get("results_dir", "outputs"))))
 
@@ -124,21 +127,53 @@ if __name__ == "__main__":
             
             for tar_num, tar_prompt in enumerate(tar_prompts):
 
+                # Select the appropriate editing method
                 if model_type == 'SD3':
-                    x0_tar = FlowEditSD3(pipe,
-                                                            scheduler,
-                                                            x0_src,
-                                                            src_prompt,
-                                                            tar_prompt,
-                                                            negative_prompt,
-                                                            T_steps,
-                                                            n_avg,
-                                                            src_guidance_scale,
-                                                            tar_guidance_scale,
-                                                            n_min,
-                                                            n_max,)
+                    if method == 'ode_inv':
+                        print(f"Using ODE Inversion method...")
+                        x0_tar = ODEInversionSD3(pipe,
+                                                scheduler,
+                                                x0_src,
+                                                src_prompt,
+                                                tar_prompt,
+                                                negative_prompt,
+                                                T_steps,
+                                                n_avg,
+                                                src_guidance_scale,
+                                                tar_guidance_scale,
+                                                n_min,
+                                                n_max,)
+                    elif method == 'irfds':
+                        print(f"Using iRFDS method...")
+                        x0_tar = iRFDSSD3(pipe,
+                                        scheduler,
+                                        x0_src,
+                                        src_prompt,
+                                        tar_prompt,
+                                        negative_prompt,
+                                        T_steps,
+                                        n_avg,
+                                        src_guidance_scale,
+                                        tar_guidance_scale,
+                                        n_min,
+                                        n_max,)
+                    else:  # flowedit or sdedit (sdedit uses same as flowedit with different n_max)
+                        print(f"Using FlowEdit method...")
+                        x0_tar = FlowEditSD3(pipe,
+                                            scheduler,
+                                            x0_src,
+                                            src_prompt,
+                                            tar_prompt,
+                                            negative_prompt,
+                                            T_steps,
+                                            n_avg,
+                                            src_guidance_scale,
+                                            tar_guidance_scale,
+                                            n_min,
+                                            n_max,)
                     
                 elif model_type == 'FLUX':
+                    # For FLUX, currently only FlowEdit is implemented
                     x0_tar = FlowEditFLUX(pipe,
                                                             scheduler,
                                                             x0_src,
@@ -152,7 +187,7 @@ if __name__ == "__main__":
                                                             n_min,
                                                             n_max,)
                 else:
-                    raise NotImplementedError(f"Sampler type {model_type} not implemented")
+                    raise NotImplementedError(f"Model type {model_type} not implemented")
 
                 print("Decoding and saving image...")
                 x0_tar_denorm = (x0_tar / pipe.vae.config.scaling_factor) + pipe.vae.config.shift_factor
