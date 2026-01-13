@@ -1,0 +1,4 @@
+Source prompt: A stop sign prominently placed in a field of yellow flowers.
+Target prompt: A sign that says IPP prominently placed in a field of yellow flowers.
+Seed: 42
+Sampler type: SD3
