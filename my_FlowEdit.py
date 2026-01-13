@@ -1,5 +1,4 @@
 import os
-import math
 import torch
 import numpy as np
 from PIL import Image
@@ -114,7 +113,8 @@ def flowedit(
 
         v_delta_accum = 0.0
         for _ in range(navg):
-            n = torch.randn_like(x_src, generator=g)
+            # torch.randn_like ne supporte pas 'generator' sur certaines versions de PyTorch
+            n = torch.randn(x_src.shape, generator=g, device=x_src.device, dtype=x_src.dtype)
 
             z_src_hat = (1.0 - t_i) * x_src + t_i * n
             z_tar_hat = z_fe + z_src_hat - x_src
@@ -130,7 +130,8 @@ def flowedit(
         return z_fe
 
     t_nmin = float(ts[nmin].item())
-    n = torch.randn_like(x_src, generator=g)
+    # torch.randn_like ne supporte pas 'generator' sur certaines versions de PyTorch
+    n = torch.randn(x_src.shape, generator=g, device=x_src.device, dtype=x_src.dtype)
     z_src_hat = (1.0 - t_nmin) * x_src + t_nmin * n
     z_tar = z_fe + z_src_hat - x_src
 
@@ -181,13 +182,20 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
-    # pipeline
-    pipe = StableDiffusion3Pipeline.from_pretrained(
-        model_id,
-        torch_dtype=torch.float16,
-        variant="fp16",
-        use_safetensors=True,
-    )
+    # pipeline: utiliser fp16 sur GPU, fp32 sur CPU
+    if device == "cuda":
+        pipe = StableDiffusion3Pipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16,
+            variant="fp16",
+            use_safetensors=True,
+        )
+    else:
+        pipe = StableDiffusion3Pipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float32,
+            use_safetensors=True,
+        )
     try_call(pipe, "enable_model_cpu_offload")
     try_call(pipe, "enable_attention_slicing")
 
@@ -197,7 +205,7 @@ def main():
     print(50*"-")
     x_src = encode_image_to_latents(pipe, img, device=device, dtype=dtype)
     print(50*"-")
-    print("Encoded source latents")
+    print("Coucou 1")
     print(50*"-")
     z_out = flowedit(
         pipe=pipe,
@@ -213,10 +221,9 @@ def main():
         seed=seed,
     )
     print(50*"-")
-    print("Flow edit completed")
+    print("Coucou 2")
     print(50*"-")
     out_img = decode_latents_to_image(pipe, z_out)
-    print("Decoded output image")
     out_img.save("flowedit_out.png")
     print("Saved: flowedit_out.png")
 
