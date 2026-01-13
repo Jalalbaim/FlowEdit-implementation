@@ -102,7 +102,7 @@ def main():
     df_sd3 = df[df["model"] == "sd3"].copy()
     df_flux = df[df["model"] == "flux"].copy()
 
-    fig, axes = plt.subplots(1, 1, figsize=(5, 4), dpi=160)
+    fig, axes = plt.subplots(1, 1, figsize=(10, 4), dpi=160)
 
     # Use auto_limits=True to adjust axes to your actual data
     plot_panel(axes, df_sd3, "Stable Diffusion 3", auto_limits=True)
@@ -110,7 +110,7 @@ def main():
 
     fig.tight_layout()
     fig.savefig(out_png)
-    #fig.savefig(out_pdf)
+    # fig.savefig(out_pdf)
     print(f"Saved: {out_png}")
     # print(f"Saved: {out_pdf}")
 
