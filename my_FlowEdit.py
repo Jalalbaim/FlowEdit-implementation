@@ -54,14 +54,23 @@ def get_text_embeddings(pipe, prompt, negative_prompt=""):
     )
 
 
-# ----------------------------
-# SD3 model output with CFG
-# ----------------------------
 @torch.no_grad()
 def sd3_model_output(pipe, latents, timestep, text_embeds_bundle, cfg_scale):
     prompt_embeds, neg_prompt_embeds, pooled, neg_pooled = text_embeds_bundle
 
+    if not torch.is_tensor(timestep):
+        timestep = torch.tensor([timestep], device=latents.device, dtype=torch.int64)
+    else:
+        timestep = timestep.to(device=latents.device)
+        if timestep.ndim == 0:
+            timestep = timestep[None]
+        elif timestep.ndim != 1:
+            timestep = timestep.view(-1)
+        if timestep.dtype != torch.int64:
+            timestep = timestep.to(torch.int64)
+
     latent_in = torch.cat([latents, latents], dim=0)
+
     noise_pred = pipe.transformer(
         hidden_states=latent_in,
         timestep=timestep,
@@ -263,23 +272,19 @@ def main():
         use_safetensors=True,
     )
 
-    # Memory mode
     try_call(pipe, "enable_model_cpu_offload")
     try_call(pipe, "enable_attention_slicing")
 
     exec_device = pipe._execution_device
     print("Execution device:", exec_device)
 
-    # Load + encode
     img = load_image(test_img, size=512)
     x_src = encode_image_to_latents(pipe, img, device=exec_device, dtype=dtype)
     print("Encoded latents:", tuple(x_src.shape), x_src.dtype, x_src.device)
 
-    # Sanity check (optional but very recommended)
     emb_tar = get_text_embeddings(pipe, prompt_tar, negative_prompt="")
     sanity_one_step(pipe, x_src, emb_tar, cfg_tar, out_path="sanity_step.png")
 
-    # Run FlowEdit
     z_out = flowedit(
         pipe=pipe,
         x_src=x_src,
