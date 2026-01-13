@@ -32,19 +32,20 @@ def decode_latents_to_image(pipe, latents):
 
 @torch.no_grad()
 def get_text_embeddings(pipe, prompt, negative_prompt=""):
-    prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds = \
-        pipe.encode_prompt(
-            prompt=prompt,
-            prompt_2=prompt,
-            prompt_3=prompt,
-            negative_prompt=negative_prompt,
-            negative_prompt_2=negative_prompt,
-            negative_prompt_3=negative_prompt,
-            device=pipe.device,
-            num_images_per_prompt=1,
-            do_classifier_free_guidance=True,
-        )
-    return (prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds)
+    device = pipe._execution_device
+
+    return pipe.encode_prompt(
+        prompt=prompt,
+        prompt_2=prompt,
+        prompt_3=prompt,
+        negative_prompt=negative_prompt,
+        negative_prompt_2=negative_prompt,
+        negative_prompt_3=negative_prompt,
+        device=device,
+        num_images_per_prompt=1,
+        do_classifier_free_guidance=True,
+    )
+
 
 @torch.no_grad()
 def predict_velocity_sd3(pipe, latents, t_continuous, text_embeds_bundle, cfg_scale):
@@ -188,10 +189,9 @@ def main():
         use_safetensors=True,
     )
     try_call(pipe, "enable_model_cpu_offload")
-    try_call(pipe, "enable_sequential_cpu_offload")
     try_call(pipe, "enable_attention_slicing")
 
-    img = load_image(test_img, size=1024)
+    img = load_image(test_img, size=512)
     print(50*"-")
     print("Loaded image:", img)
     print(50*"-")
