@@ -190,7 +190,6 @@ def main():
     try_call(pipe, "enable_model_cpu_offload")
     try_call(pipe, "enable_sequential_cpu_offload")
     try_call(pipe, "enable_attention_slicing")
-    try_call(pipe, "enable_xformers_memory_efficient_attention")
 
     img = load_image(test_img, size=1024)
     print(50*"-")
