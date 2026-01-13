@@ -142,6 +142,13 @@ def flowedit(
 
     return z_tar
 
+def try_call(obj, name):
+    fn = getattr(obj, name, None)
+    if callable(fn):
+        fn()
+        print(f"[OK] {name}")
+    else:
+        print(f"[SKIP] {name} not available")
 
 def main():
 
@@ -165,6 +172,11 @@ def main():
     cfg_tar = float(os.environ.get("CFG_TAR", "13.5"))
     seed = int(os.environ.get("SEED", "0"))
 
+    print(50*"-")
+    print(f"Using seed: {seed} \n T: {T} \n nmax: {nmax} \n nmin: {nmin} \n navg: {navg} \n cfg_src: {cfg_src} \n cfg_tar: {cfg_tar}")
+    print(50*"-")
+
+    print("Loading model...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
 
@@ -175,16 +187,19 @@ def main():
         variant="fp16",
         use_safetensors=True,
     )
-    pipe.enable_model_cpu_offload()
-    pipe.enable_attention_slicing()
-    pipe.enable_vae_slicing()
-    pipe.enable_vae_tiling()
-
+    try_call(pipe, "enable_model_cpu_offload")
+    try_call(pipe, "enable_sequential_cpu_offload")
+    try_call(pipe, "enable_attention_slicing")
+    try_call(pipe, "enable_xformers_memory_efficient_attention")
 
     img = load_image(test_img, size=1024)
+    print(50*"-")
     print("Loaded image:", img)
+    print(50*"-")
     x_src = encode_image_to_latents(pipe, img, device=device, dtype=dtype)
+    print(50*"-")
     print("Encoded source latents")
+    print(50*"-")
     z_out = flowedit(
         pipe=pipe,
         x_src=x_src,
@@ -198,7 +213,9 @@ def main():
         cfg_tar=cfg_tar,
         seed=seed,
     )
+    print(50*"-")
     print("Flow edit completed")
+    print(50*"-")
     out_img = decode_latents_to_image(pipe, z_out)
     print("Decoded output image")
     out_img.save("flowedit_out.png")
