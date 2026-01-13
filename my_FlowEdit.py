@@ -171,13 +171,20 @@ def main():
     # pipeline
     pipe = StableDiffusion3Pipeline.from_pretrained(
         model_id,
-        torch_dtype=dtype,
-    ).to(device)
-    pipe.set_progress_bar_config(disable=True)
+        torch_dtype=torch.float16,
+        variant="fp16",
+        use_safetensors=True,
+    )
+    pipe.enable_model_cpu_offload()
+    pipe.enable_attention_slicing()
+    pipe.enable_vae_slicing()
+    pipe.enable_vae_tiling()
+
 
     img = load_image(test_img, size=1024)
+    print("Loaded image:", img)
     x_src = encode_image_to_latents(pipe, img, device=device, dtype=dtype)
-
+    print("Encoded source latents")
     z_out = flowedit(
         pipe=pipe,
         x_src=x_src,
@@ -191,8 +198,9 @@ def main():
         cfg_tar=cfg_tar,
         seed=seed,
     )
-
+    print("Flow edit completed")
     out_img = decode_latents_to_image(pipe, z_out)
+    print("Decoded output image")
     out_img.save("flowedit_out.png")
     print("Saved: flowedit_out.png")
 
