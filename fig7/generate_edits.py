@@ -1,95 +1,31 @@
-from __future__ import annotations
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+import os
 import argparse
-import copy
-import csv
-import datetime as dt
-import subprocess
-import sys
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+import random
+import numpy as np
+from typing import Any, Dict, List, Tuple
 
-import yaml
+import torch
+from PIL import Image
+from diffusers import StableDiffusion3Pipeline
 
-
-def _iter_dict_paths(d: Any, prefix: Tuple[str, ...] = ()) -> Iterable[Tuple[Tuple[str, ...], Any]]:
-    """Yield (path, value) for every key in nested dicts."""
-    if isinstance(d, dict):
-        for k, v in d.items():
-            if not isinstance(k, str):
-                continue
-            p = prefix + (k,)
-            yield (p, v)
-            yield from _iter_dict_paths(v, p)
-    elif isinstance(d, list):
-        for i, v in enumerate(d):
-            yield from _iter_dict_paths(v, prefix + (str(i),))
+# You already have this
+from FlowEdit_utils import FlowEditSD3
 
 
-def _get_by_path(root: Any, path: Tuple[str, ...]) -> Any:
-    cur = root
-    for p in path:
-        if isinstance(cur, dict):
-            cur = cur[p]
-        elif isinstance(cur, list):
-            cur = cur[int(p)]
-        else:
-            raise KeyError(path)
-    return cur
-
-
-def _set_by_path(root: Any, path: Tuple[str, ...], value: Any) -> None:
-    cur = root
-    for p in path[:-1]:
-        if isinstance(cur, dict):
-            cur = cur[p]
-        elif isinstance(cur, list):
-            cur = cur[int(p)]
-        else:
-            raise KeyError(path)
-    last = path[-1]
-    if isinstance(cur, dict):
-        cur[last] = value
-    elif isinstance(cur, list):
-        cur[int(last)] = value
-    else:
-        raise KeyError(path)
-
-
-def set_any(cfg: Dict[str, Any], key_candidates: List[str], value: Any) -> None:
-
-    candidates_lc = {k.lower() for k in key_candidates}
-
-    # Try recursive match first
-    for path, _ in _iter_dict_paths(cfg):
-        last = path[-1]
-        if last.lower() in candidates_lc:
-            _set_by_path(cfg, path, value)
-            return
-
-    # Otherwise set at top-level (best-effort)
-    cfg[key_candidates[0]] = value
-
-
-def load_yaml(p: Path) -> Dict[str, Any]:
-    with p.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def dump_yaml(obj: Dict[str, Any], p: Path) -> None:
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(obj, f, sort_keys=False, allow_unicode=True)
-
+# ============================================================
+# Sweep definition
+# ============================================================
 
 def sd3_sweep() -> List[Dict[str, Any]]:
-
     runs: List[Dict[str, Any]] = []
 
     # SDEdit
     nmax_list = [10, 15, 20, 25, 30, 35, 40]
     for i, nmax in enumerate(nmax_list):
-        strength = 0.1 * (i + 2)  # 0.2..0.8 (for labeling only)
+        strength = 0.1 * (i + 2)  # label only
         runs.append({
             "model": "sd3",
             "method": "sdedit",
@@ -117,11 +53,11 @@ def sd3_sweep() -> List[Dict[str, Any]]:
             }
         })
 
-    # iRFDS (official impl / hypers): we just set method; your run_script.py must support it
+    # iRFDS (practical baseline)
     runs.append({
         "model": "sd3",
         "method": "irfds",
-        "label": "iRFDS_official",
+        "label": "iRFDS_like",
         "order_idx": 0,
         "overrides": {
             "T": 50,
@@ -146,220 +82,498 @@ def sd3_sweep() -> List[Dict[str, Any]]:
     return runs
 
 
-def flux_sweep(include_extra_figS3: bool = False) -> List[Dict[str, Any]]:
+# ============================================================
+# Helpers (SD3 prompt + CFG velocity)
+# ============================================================
 
-    # runs: List[Dict[str, Any]] = []
+@torch.no_grad()
+def _encode_prompt_sd3(
+    pipe,
+    prompt: str,
+    negative_prompt: str,
+    device: torch.device,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Returns: (cond_embeds, uncond_embeds, cond_pooled, uncond_pooled)
+    """
+    try:
+        out = pipe.encode_prompt(
+            prompt=prompt,
+            prompt_2=None,
+            prompt_3=None,
+            device=device,
+            num_images_per_prompt=1,
+            do_classifier_free_guidance=True,
+            negative_prompt=negative_prompt,
+            negative_prompt_2=None,
+            negative_prompt_3=None,
+        )
+    except TypeError:
+        out = pipe.encode_prompt(
+            prompt=prompt,
+            device=device,
+            num_images_per_prompt=1,
+            do_classifier_free_guidance=True,
+            negative_prompt=negative_prompt,
+        )
 
-    # # SDEdit
-    # nmax_list = [7, 14, 21]
-    # strength_list = [0.25, 0.50, 0.75]
-    # for i, (nmax, s) in enumerate(zip(nmax_list, strength_list)):
-    #     runs.append({
-    #         "model": "flux",
-    #         "method": "sdedit",
-    #         "label": f"SDEdit_{s:g}",
-    #         "order_idx": i,
-    #         "overrides": {
-    #             "T": 28,
-    #             "n_max": nmax,
-    #             "cfg_tgt": 5.5,
-    #         }
-    #     })
+    if isinstance(out, (tuple, list)) and len(out) == 4:
+        prompt_embeds, neg_prompt_embeds, pooled, neg_pooled = out
+        return prompt_embeds, neg_prompt_embeds, pooled, neg_pooled
 
-    # # ODE inv
-    # ode_nmax_values = [24] + ([20] if include_extra_figS3 else [])
-    # for ode_nmax in ode_nmax_values:
-    #     for j, cfg_tgt in enumerate([3.5, 5.5]):
-    #         runs.append({
-    #             "model": "flux",
-    #             "method": "ode_inv",
-    #             "label": f"ODEInv_n{ode_nmax}_cfg{cfg_tgt:g}",
-    #             "order_idx": j,
-    #             "overrides": {
-    #                 "T": 28,
-    #                 "n_max": ode_nmax,
-    #                 "cfg_src": 1.5,
-    #                 "cfg_tgt": cfg_tgt,
-    #             }
-    #         })
-
-    # # FlowEdit
-    # for j, cfg_tgt in enumerate([3.5, 5.5]):
-    #     runs.append({
-    #         "model": "flux",
-    #         "method": "flowedit",
-    #         "label": f"Ours_cfg{cfg_tgt:g}",
-    #         "order_idx": j,
-    #         "overrides": {
-    #             "T": 28,
-    #             "n_max": 24,
-    #             "cfg_src": 1.5,
-    #             "cfg_tgt": cfg_tgt,
-    #         }
-    #     })
-
-    # # RF-Inversion
-    # etas = [0.9] + ([1.0] if include_extra_figS3 else [])
-    # taus = [8, 7, 6]
-    # idx = 0
-    # for eta in etas:
-    #     for tau in taus:
-    #         runs.append({
-    #             "model": "flux",
-    #             "method": "rf_inv",
-    #             "label": f"RFInv_eta{eta:g}_tau{tau}",
-    #             "order_idx": idx,
-    #             "overrides": {
-    #                 "T": 28,
-    #                 "rf_s": 0,          # starting time
-    #                 "rf_tau": tau,      # stopping time
-    #                 "rf_eta": eta,      # strength
-    #             }
-    #         })
-    #         idx += 1
-
-    # # RF Edit
-    # for k, inj in enumerate([2, 3, 5]):
-    #     runs.append({
-    #         "model": "flux",
-    #         "method": "rf_edit",
-    #         "label": f"RFEdit_inj{inj}",
-    #         "order_idx": k,
-    #         "overrides": {
-    #             "rfedit_steps": 30,
-    #             "rfedit_guidance": 2,
-    #             "rfedit_injection": inj,
-    #         }
-    #     })
-
-    pass
+    raise RuntimeError("encode_prompt() did not return 4 tensors. Print 'out' and adjust unpacking.")
 
 
-# -------------------------
+@torch.no_grad()
+def _add_noise_sd3_fm(scheduler, x0: torch.Tensor, noise: torch.Tensor, i: int) -> torch.Tensor:
+    """
+    For FlowMatchEulerDiscreteScheduler (no add_noise()):
+    x_sigma = x0 + sigma_i * noise
+    """
+    if not hasattr(scheduler, "sigmas"):
+        raise RuntimeError("Scheduler has no sigmas; can't add noise manually.")
+
+    sigma = scheduler.sigmas[i]
+    if not torch.is_tensor(sigma):
+        sigma = torch.tensor(sigma, device=x0.device, dtype=x0.dtype)
+    else:
+        sigma = sigma.to(device=x0.device, dtype=x0.dtype)
+
+    # sigma is scalar; broadcast over latent
+    return x0 + sigma * noise
+
+
+
+def _make_prompt_pack(pipe, prompt: str, negative_prompt: str, device: torch.device) -> Dict[str, torch.Tensor]:
+    cond_emb, uncond_emb, cond_pool, uncond_pool = _encode_prompt_sd3(pipe, prompt, negative_prompt, device)
+    return {
+        "cond_emb": cond_emb,
+        "uncond_emb": uncond_emb,
+        "cond_pool": cond_pool,
+        "uncond_pool": uncond_pool,
+    }
+
+
+@torch.no_grad()
+def _transformer_forward_sd3(
+    pipe,
+    latents: torch.Tensor,
+    t_in: torch.Tensor,
+    emb_in: torch.Tensor,
+    pool_in: torch.Tensor,
+):
+    """
+    Diffusers SD3 transformer signature can vary. Try common arg names.
+    """
+    # Most common
+    try:
+        return pipe.transformer(
+            hidden_states=latents,
+            timestep=t_in,
+            encoder_hidden_states=emb_in,
+            pooled_projections=pool_in,
+            return_dict=True,
+        )
+    except TypeError:
+        pass
+
+    # Alternate pooled name
+    try:
+        return pipe.transformer(
+            hidden_states=latents,
+            timestep=t_in,
+            encoder_hidden_states=emb_in,
+            pooled_prompt_embeds=pool_in,
+            return_dict=True,
+        )
+    except TypeError:
+        pass
+
+    # Some versions use "timesteps"
+    try:
+        return pipe.transformer(
+            hidden_states=latents,
+            timesteps=t_in,
+            encoder_hidden_states=emb_in,
+            pooled_projections=pool_in,
+            return_dict=True,
+        )
+    except TypeError as e:
+        raise RuntimeError(f"SD3 transformer call failed with your diffusers version: {e}")
+
+
+@torch.no_grad()
+def _cfg_velocity_sd3(
+    pipe,
+    latents: torch.Tensor,
+    t: torch.Tensor,
+    prompt_pack: Dict[str, torch.Tensor],
+    guidance_scale: float,
+) -> torch.Tensor:
+    """
+    Guided velocity (flow) with CFG.
+    """
+    cond_emb = prompt_pack["cond_emb"]
+    uncond_emb = prompt_pack["uncond_emb"]
+    cond_pool = prompt_pack["cond_pool"]
+    uncond_pool = prompt_pack["uncond_pool"]
+
+    lat_in = torch.cat([latents, latents], dim=0)
+    emb_in = torch.cat([uncond_emb, cond_emb], dim=0)
+    pool_in = torch.cat([uncond_pool, cond_pool], dim=0)
+
+    if not isinstance(t, torch.Tensor):
+        t = torch.tensor(t, device=latents.device)
+    if t.ndim == 0:
+        t = t[None]
+    t_in = t.repeat(2)
+
+    out = _transformer_forward_sd3(pipe, lat_in, t_in, emb_in, pool_in)
+
+    v = out.sample if hasattr(out, "sample") else out[0]
+    v_uncond, v_cond = v.chunk(2, dim=0)
+    return v_uncond + guidance_scale * (v_cond - v_uncond)
+
+
+# ============================================================
+# Baselines (SD3)
+# ============================================================
+
+@torch.no_grad()
+def SDEditSD3(
+    pipe,
+    scheduler,
+    x0_src: torch.Tensor,
+    src_prompt: str,
+    tar_prompt: str,
+    negative_prompt: str,
+    T_steps: int,
+    n_avg: int,
+    cfg_src: float,
+    cfg_tgt: float,
+    n_min: int,
+    n_max: int,
+) -> torch.Tensor:
+    device = x0_src.device
+    scheduler.set_timesteps(T_steps, device=device)
+
+    # start_i: bigger n_max => stronger => earlier (higher sigma)
+    start_i = max(0, min(T_steps - 1, T_steps - int(n_max)))
+
+    noise = torch.randn_like(x0_src)
+    x_t = _add_noise_sd3_fm(scheduler, x0_src, noise, start_i)
+
+    pack_tgt = _make_prompt_pack(pipe, tar_prompt, negative_prompt, device)
+
+    lat = x_t
+    for i in range(start_i, T_steps):
+        t = scheduler.timesteps[i]
+        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
+            v = _cfg_velocity_sd3(pipe, lat, t, pack_tgt, cfg_tgt)
+
+        step_out = scheduler.step(v, t, lat, return_dict=True)
+        lat = step_out.prev_sample if hasattr(step_out, "prev_sample") else step_out[0]
+
+    return lat
+
+
+@torch.no_grad()
+def ODEInvSD3(
+    pipe, scheduler, x0_src: torch.Tensor,
+    src_prompt: str, tar_prompt: str, negative_prompt: str,
+    T_steps: int, n_avg: int, cfg_src: float, cfg_tgt: float, n_min: int, n_max: int,
+) -> torch.Tensor:
+    device = x0_src.device
+    scheduler.set_timesteps(T_steps, device=device)
+
+    if not hasattr(scheduler, "sigmas"):
+        raise RuntimeError("ODEInvSD3 expects scheduler.sigmas (FlowMatchEulerDiscreteScheduler).")
+
+    timesteps = scheduler.timesteps
+    sigmas = scheduler.sigmas
+    if not isinstance(sigmas, torch.Tensor):
+        sigmas = torch.tensor(sigmas, device=device)
+    else:
+        sigmas = sigmas.to(device)
+
+    pack_src = _make_prompt_pack(pipe, src_prompt, negative_prompt, device)
+    pack_tgt = _make_prompt_pack(pipe, tar_prompt, negative_prompt, device)
+
+    # Forward (low->high): reverse
+    timesteps_fwd = torch.flip(timesteps, dims=[0])
+    sigmas_fwd = torch.flip(sigmas, dims=[0])
+
+    lat = x0_src
+    for i in range(T_steps):
+        t = timesteps_fwd[i]
+        sigma = sigmas_fwd[i]
+        sigma_next = sigmas_fwd[i + 1]
+        dt = sigma_next - sigma
+
+        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
+            v = _cfg_velocity_sd3(pipe, lat, t, pack_src, cfg_src)
+        lat = lat + dt * v
+
+    x_T = lat
+
+    # Backward (high->low): original
+    lat = x_T
+    for i in range(T_steps):
+        t = timesteps[i]
+        sigma = sigmas[i]
+        sigma_next = sigmas[i + 1]
+        dt = sigma_next - sigma  # negative
+
+        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
+            v = _cfg_velocity_sd3(pipe, lat, t, pack_tgt, cfg_tgt)
+        lat = lat + dt * v
+
+    return lat
+
+
+@torch.no_grad()
+def iRFDS_SD3(
+    pipe,
+    scheduler,
+    x0_src: torch.Tensor,
+    src_prompt: str,
+    tar_prompt: str,
+    negative_prompt: str,
+    T_steps: int,
+    n_avg: int,
+    cfg_src: float,
+    cfg_tgt: float,
+    n_min: int,
+    n_max: int,
+) -> torch.Tensor:
+    device = x0_src.device
+    scheduler.set_timesteps(T_steps, device=device)
+
+    pack_tgt = _make_prompt_pack(pipe, tar_prompt, negative_prompt, device)
+
+    lat = x0_src
+    fixed_noise = torch.randn_like(x0_src)
+
+    for i in range(T_steps):
+        t = scheduler.timesteps[i]
+
+        # x_src_t = x0 + sigma_i * noise
+        x_src_t = _add_noise_sd3_fm(scheduler, x0_src, fixed_noise, i)
+
+        # anchored noise injection
+        x_in = lat + (x_src_t - x0_src)
+
+        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
+            v = _cfg_velocity_sd3(pipe, x_in, t, pack_tgt, cfg_tgt)
+
+        step_out = scheduler.step(v, t, lat, return_dict=True)
+        lat = step_out.prev_sample if hasattr(step_out, "prev_sample") else step_out[0]
+
+    return lat
+
+
+
+# ============================================================
+# Pipeline + IO
+# ============================================================
+
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def load_sd3_pipe(device_number: int) -> StableDiffusion3Pipeline:
+    if "HF_TOKEN" not in os.environ:
+        raise RuntimeError("Missing HF_TOKEN in environment. Do: export HF_TOKEN=...")
+
+    pipe = StableDiffusion3Pipeline.from_pretrained(
+        "stabilityai/stable-diffusion-3-medium-diffusers",
+        torch_dtype=torch.float16,
+        token=os.environ["HF_TOKEN"],
+    )
+
+    if torch.cuda.is_available():
+        pipe.enable_model_cpu_offload()
+        if hasattr(pipe, "vae"):
+            if hasattr(pipe.vae, "enable_slicing"):
+                pipe.vae.enable_slicing()
+            if hasattr(pipe.vae, "enable_tiling"):
+                pipe.vae.enable_tiling()
+    else:
+        pipe = pipe.to("cpu")
+
+    return pipe
+
+
+def encode_image_to_latent(pipe: StableDiffusion3Pipeline, image_path: str, device: torch.device) -> torch.Tensor:
+    image = Image.open(image_path).convert("RGB")
+    image = image.crop((0, 0, image.width - image.width % 16, image.height - image.height % 16))
+
+    image_src = pipe.image_processor.preprocess(image).to(device).half()
+
+    with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
+        x0_src_denorm = pipe.vae.encode(image_src).latent_dist.mode()
+
+    x0_src = (x0_src_denorm - pipe.vae.config.shift_factor) * pipe.vae.config.scaling_factor
+    return x0_src.to(device)
+
+
+def decode_latent_to_pil(pipe: StableDiffusion3Pipeline, x0: torch.Tensor) -> Image.Image:
+    x0_denorm = (x0 / pipe.vae.config.scaling_factor) + pipe.vae.config.shift_factor
+    with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
+        img = pipe.vae.decode(x0_denorm, return_dict=False)[0]
+    pil_list = pipe.image_processor.postprocess(img)
+    return pil_list[0]
+
+
+def run_one(
+    pipe,
+    scheduler,
+    method: str,
+    x0_src: torch.Tensor,
+    src_prompt: str,
+    tgt_prompt: str,
+    negative_prompt: str,
+    cfg: Dict[str, Any],
+) -> torch.Tensor:
+    T_steps = int(cfg["T"])
+    n_avg = int(cfg["n_avg"])
+    n_min = int(cfg["n_min"])
+    n_max = int(cfg["n_max"])
+    cfg_src = float(cfg["cfg_src"])
+    cfg_tgt = float(cfg["cfg_tgt"])
+
+    if method == "flowedit":
+        return FlowEditSD3(
+            pipe, scheduler, x0_src,
+            src_prompt, tgt_prompt, negative_prompt,
+            T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
+        )
+
+    if method == "sdedit":
+        return SDEditSD3(
+            pipe, scheduler, x0_src,
+            src_prompt, tgt_prompt, negative_prompt,
+            T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
+        )
+
+    if method == "ode_inv":
+        return ODEInvSD3(
+            pipe, scheduler, x0_src,
+            src_prompt, tgt_prompt, negative_prompt,
+            T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
+        )
+
+    if method == "irfds":
+        return iRFDS_SD3(
+            pipe, scheduler, x0_src,
+            src_prompt, tgt_prompt, negative_prompt,
+            T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
+        )
+
+    raise ValueError(f"Unknown method: {method}")
+
+
+# ============================================================
 # Main
-# -------------------------
+# ============================================================
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--sd3_template", type=str, default="SD3_exp.yaml")
-    ap.add_argument("--flux_template", type=str, default="FLUX_exp.yaml")
-    ap.add_argument("--out_root", type=str, default="outputs_fig7")
-    ap.add_argument("--exp_out_dir", type=str, default="scripts/fig7/exp_generated")
-    ap.add_argument("--include_extra_figS3", action="store_true",
-                    help="Also run extra hyperparams mentioned for Fig S3 (ODE nmax=20, RFInv eta=1.0).")
-    ap.add_argument("--skip_irfds", action="store_true",
-                    help="Skip iRFDS run (if your run_script.py doesn't support it).")
-    ap.add_argument("--dry_run", action="store_true",
-                    help="Only generate YAMLs + manifest, do not call run_script.py.")
-    ap.add_argument("--model", type=str, choices=["sd3", "flux", "both"], default="both",
-                    help="Which model to run: 'sd3', 'flux', or 'both' (default: both)")
-    args = ap.parse_args()
+class Args:
+    device_number = 0
+    input_img = "example_images/cat_ginger.png"
+    src_prompt = "An orange and white cat sitting."
+    tgt_prompt = "A tiger sitting."
+    seed = 0
+    out_dir = "outputs_sweep"
+    n_avg = 1
+    n_min = 0
+    n_max = 33
+    cfg_src = 3.5
+    cfg_tgt = 13.5
+    T = 50
 
-    repo_root = Path(".").resolve()
-    sd3_template = (repo_root / args.sd3_template).resolve()
-    flux_template = (repo_root / args.flux_template).resolve()
-    out_root = (repo_root / args.out_root).resolve()
-    exp_out_dir = (repo_root / args.exp_out_dir).resolve()
-
-    if not sd3_template.exists():
-        raise FileNotFoundError(f"Missing SD3 template: {sd3_template}")
-    if not flux_template.exists():
-        raise FileNotFoundError(f"Missing FLUX template: {flux_template}")
-    if not (repo_root / "run_script.py").exists():
-        raise FileNotFoundError("You must run this from the FlowEdit repo root (run_script.py not found).")
-
-    # Load templates and generate runs based on selected model
-    runs = []
-    sd3_base = None
-    flux_base = None
-    
-    if args.model in ["sd3", "both"]:
-        sd3_base = load_yaml(sd3_template)
-        # Handle case where YAML contains a list with single dict
-        if isinstance(sd3_base, list) and len(sd3_base) > 0:
-            sd3_base = sd3_base[0]
-        runs.extend(sd3_sweep())
-    
-    if args.model in ["flux", "both"]:
-        flux_base = load_yaml(flux_template)
-        # Handle case where YAML contains a list with single dict
-        if isinstance(flux_base, list) and len(flux_base) > 0:
-            flux_base = flux_base[0]
-        runs.extend(flux_sweep(include_extra_figS3=args.include_extra_figS3))
-    
-    if args.skip_irfds:
-        runs = [r for r in runs if r["method"] != "irfds"]
-
-    timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    manifest_path = out_root / "runs_manifest.csv"
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write manifest
-    with manifest_path.open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["run_id", "model", "method", "label", "order_idx", "exp_yaml", "output_dir", "template_used", "timestamp"])
-
-        for idx, r in enumerate(runs):
-            model = r["model"]
-            method = r["method"]
-            label = r["label"]
-            order_idx = r["order_idx"]
-            overrides = r["overrides"]
-
-            base = sd3_base if model == "sd3" else flux_base
-            template_used = str(sd3_template if model == "sd3" else flux_template)
-
-            cfg = copy.deepcopy(base)
-
-            # Output directory per run
-            run_id = f"{model}_{method}_{idx:03d}_{label}".replace(" ", "_")
-            run_dir = out_root / model / method / run_id
-            set_any(cfg, ["output_dir", "out_dir", "save_dir", "results_dir"], str(run_dir))
-
-            # Method / algorithm selector
-            set_any(cfg, ["method", "mode", "edit_method", "algorithm"], method)
-
-            # Standard overrides
-            if "T" in overrides:
-                set_any(cfg, ["T", "t_steps", "num_steps", "num_inference_steps", "T_steps"], overrides["T"])
-            if "n_max" in overrides:
-                set_any(cfg, ["n_max", "nmax"], overrides["n_max"])
-            if "cfg_src" in overrides:
-                set_any(cfg, ["cfg_src", "cfg_source", "cfg@source", "guidance_scale_src", "source_cfg", "src_guidance_scale"], overrides["cfg_src"])
-            if "cfg_tgt" in overrides:
-                set_any(cfg, ["cfg_tgt", "cfg_target", "cfg@target", "guidance_scale_tgt", "target_cfg", "tar_guidance_scale"], overrides["cfg_tgt"])
-
-            # RF-Inversion overrides
-            if "rf_s" in overrides:
-                set_any(cfg, ["rf_s", "s_start", "rf_start", "start_time"], overrides["rf_s"])
-            if "rf_tau" in overrides:
-                set_any(cfg, ["rf_tau", "tau", "stop_time", "stopping_time"], overrides["rf_tau"])
-            if "rf_eta" in overrides:
-                set_any(cfg, ["rf_eta", "eta", "strength"], overrides["rf_eta"])
-
-            # RF Edit overrides
-            if "rfedit_steps" in overrides:
-                set_any(cfg, ["rfedit_steps", "steps", "rf_steps"], overrides["rfedit_steps"])
-            if "rfedit_guidance" in overrides:
-                set_any(cfg, ["rfedit_guidance", "guidance", "guidance_scale"], overrides["rfedit_guidance"])
-            if "rfedit_injection" in overrides:
-                set_any(cfg, ["rfedit_injection", "injection", "injection_scale", "inject"], overrides["rfedit_injection"])
-
-            # Save exp yaml (wrap in list to match run_script.py's expected format)
-            exp_path = exp_out_dir / model / method / f"{run_id}.yaml"
-            dump_yaml([cfg], exp_path)
-
-            w.writerow([run_id, model, method, label, order_idx, str(exp_path), str(run_dir), template_used, timestamp])
-
-            # Run editing
-            if not args.dry_run:
-                run_dir.mkdir(parents=True, exist_ok=True)
-                print(f"\n=== Running {run_id} ===")
-                cmd = [sys.executable, "run_script.py", "--exp_yaml", str(exp_path)]
-                subprocess.run(cmd, check=True)
-
-    print(f"\nDone. Manifest: {manifest_path}")
+args = Args()
 
 
-if __name__ == "__main__":
-    main()
+def main():
+    torch.set_grad_enabled(False)
+
+    device = torch.device(f"cuda:{args.device_number}" if torch.cuda.is_available() else "cpu")
+    print("Using device:", device)
+
+    set_seed(args.seed)
+
+    pipe = load_sd3_pipe(args.device_number)
+    scheduler = pipe.scheduler
+    print("Model loaded")
+
+    x0_src = encode_image_to_latent(pipe, args.input_img, device)
+
+    runs = sd3_sweep()
+    method_order = {"sdedit": 0, "ode_inv": 1, "irfds": 2, "flowedit": 3}
+    runs = sorted(runs, key=lambda r: (method_order.get(r["method"], 99), r.get("order_idx", 0)))
+
+    negative_prompt = ""
+
+    base_cfg = {
+        "T": args.T,
+        "n_avg": args.n_avg,
+        "n_min": args.n_min,
+        "n_max": args.n_max,
+        "cfg_src": args.cfg_src,
+        "cfg_tgt": args.cfg_tgt,
+    }
+
+    src_name = os.path.splitext(os.path.basename(args.input_img))[0]
+
+    for run in runs:
+        cfg = dict(base_cfg)
+        cfg.update(run.get("overrides", {}))
+
+        label = run["label"]
+        method = run["method"]
+
+        print(f"[RUN] {label}  method={method}  cfg={cfg}")
+
+        x0_out = run_one(
+            pipe=pipe,
+            scheduler=scheduler,
+            method=method,
+            x0_src=x0_src,
+            src_prompt=args.src_prompt,
+            tgt_prompt=args.tgt_prompt,
+            negative_prompt=negative_prompt,
+            cfg=cfg,
+        )
+
+        img_out = decode_latent_to_pil(pipe, x0_out)
+
+        save_dir = os.path.join(args.out_dir, f"src_{src_name}", "tar_0", label)
+        os.makedirs(save_dir, exist_ok=True)
+
+        fname = (
+            f"out_method_{method}_T{cfg['T']}_navg{cfg['n_avg']}_"
+            f"cfgsrc{cfg.get('cfg_src','NA')}_cfgtgt{cfg.get('cfg_tgt','NA')}_"
+            f"nmin{cfg.get('n_min','NA')}_nmax{cfg.get('n_max','NA')}_seed{args.seed}.png"
+        )
+        img_out.save(os.path.join(save_dir, fname))
+
+        with open(os.path.join(save_dir, "prompts.txt"), "w", encoding="utf-8") as f:
+            f.write(f"Source prompt: {args.src_prompt}\n")
+            f.write(f"Target prompt: {args.tgt_prompt}\n")
+            f.write(f"Seed: {args.seed}\n")
+            f.write(f"Method: {method}\n")
+            f.write(f"Label: {label}\n")
+            f.write(f"Config: {cfg}\n")
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    print("Done")
+
+
+
+main()
