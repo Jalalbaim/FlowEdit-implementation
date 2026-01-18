@@ -158,13 +158,11 @@ def flowedit(
     if nmin == 0:
         return z_fe
 
-    # build z_tar at nmin
     t_m = _as_1d_float_timestep(timesteps[nmin], device)
     n = randn_like_gen(x_src, g)
     z_src_hat = pipe.scheduler.scale_noise(x_src, t_m, noise=n)
     z_tar = z_fe + z_src_hat - x_src
 
-    #target sampling
     for i in range(nmin, 0, -1):
         t_i = _as_1d_float_timestep(timesteps[i], device)
         v = sd3_velocity(pipe, z_tar, t_i, emb_tar, cfg_tar, low_vram_cfg=low_vram_cfg)
@@ -178,27 +176,6 @@ def randn_like_gen(x, g=None):
     if g is None:
         return torch.randn(x.shape, device=x.device, dtype=x.dtype)
     return torch.randn(x.shape, device=x.device, dtype=x.dtype, generator=g)
-
-
-@torch.no_grad()
-def sanity_one_step(pipe, x_src, emb_tar, cfg_tar, out_path="sanity_step.png", low_vram_cfg=True):
-    device = pipe._execution_device
-    x_src = x_src.to(device)
-
-    pipe.scheduler.set_timesteps(10, device=device)
-    timesteps = pipe.scheduler.timesteps
-    sigmas = pipe.scheduler.sigmas.to(device)
-
-    t0 = _as_1d_float_timestep(timesteps[0], device)
-    z = x_src.clone()
-
-    v = sd3_velocity(pipe, z, t0, emb_tar, cfg_tar, low_vram_cfg=low_vram_cfg)
-    dt = (sigmas[1] - sigmas[0]).item()
-    z2 = _euler_update(z, v, dt)
-
-    img2 = decode_latents_to_image(pipe, z2)
-    img2.save(out_path)
-    print("Saved:", out_path)
 
 
 def main():
@@ -269,8 +246,7 @@ def main():
     print("Encoded latents:", tuple(x_src.shape), x_src.dtype, x_src.device)
 
     emb_tar = get_text_embeddings(pipe, prompt_tar, negative_prompt="")
-    sanity_one_step(pipe, x_src, emb_tar, cfg_tar, out_path="sanity_step.png", low_vram_cfg=low_vram_cfg)
-
+    
     z_out = flowedit(
         pipe=pipe,
         x_src=x_src,
