@@ -1,4 +1,0 @@
-Source prompt: A majestic castle with a tall, pointed roof, situated on a hillside. The sky above the castle is filled with clouds, creating a dramatic atmosphere. There are several windows on the castle, with some located on the lower levels and others on the upper levels.
-Target prompt: A majestic castle made out of lego bricks with a tall, pointed roof, situated on a hillside. The sky above the lego castle is filled with clouds, creating a dramatic atmosphere. There are several windows on the lego castle, with some located on the lower levels and others on the upper levels.
-Seed: 42
-Sampler type: SD3

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import os
 import argparse
 import random
@@ -11,13 +8,9 @@ import torch
 from PIL import Image
 from diffusers import StableDiffusion3Pipeline
 
-# You already have this
 from FlowEdit_utils import FlowEditSD3
 
 
-# ============================================================
-# Sweep definition
-# ============================================================
 
 def sd3_sweep() -> List[Dict[str, Any]]:
     runs: List[Dict[str, Any]] = []
@@ -38,32 +31,6 @@ def sd3_sweep() -> List[Dict[str, Any]]:
             }
         })
 
-    # ODE inversion (3 target CFG)
-    for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
-        runs.append({
-            "model": "sd3",
-            "method": "ode_inv",
-            "label": f"ODEInv_cfg{cfg_tgt:g}",
-            "order_idx": j,
-            "overrides": {
-                "T": 50,
-                "n_max": 33,
-                "cfg_src": 3.5,
-                "cfg_tgt": cfg_tgt,
-            }
-        })
-
-    # iRFDS (practical baseline)
-    runs.append({
-        "model": "sd3",
-        "method": "irfds",
-        "label": "iRFDS_like",
-        "order_idx": 0,
-        "overrides": {
-            "T": 50,
-        }
-    })
-
     # FlowEdit (3 target CFG)
     for j, cfg_tgt in enumerate([13.5, 16.5, 19.5]):
         runs.append({
@@ -82,10 +49,6 @@ def sd3_sweep() -> List[Dict[str, Any]]:
     return runs
 
 
-# ============================================================
-# Helpers (SD3 prompt + CFG velocity)
-# ============================================================
-
 @torch.no_grad()
 def _encode_prompt_sd3(
     pipe,
@@ -93,9 +56,7 @@ def _encode_prompt_sd3(
     negative_prompt: str,
     device: torch.device,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    Returns: (cond_embeds, uncond_embeds, cond_pooled, uncond_pooled)
-    """
+
     try:
         out = pipe.encode_prompt(
             prompt=prompt,
@@ -126,10 +87,7 @@ def _encode_prompt_sd3(
 
 @torch.no_grad()
 def _add_noise_sd3_fm(scheduler, x0: torch.Tensor, noise: torch.Tensor, i: int) -> torch.Tensor:
-    """
-    For FlowMatchEulerDiscreteScheduler (no add_noise()):
-    x_sigma = x0 + sigma_i * noise
-    """
+
     if not hasattr(scheduler, "sigmas"):
         raise RuntimeError("Scheduler has no sigmas; can't add noise manually.")
 
@@ -162,9 +120,7 @@ def _transformer_forward_sd3(
     emb_in: torch.Tensor,
     pool_in: torch.Tensor,
 ):
-    """
-    Diffusers SD3 transformer signature can vary. Try common arg names.
-    """
+
     # Most common
     try:
         return pipe.transformer(
@@ -210,9 +166,7 @@ def _cfg_velocity_sd3(
     prompt_pack: Dict[str, torch.Tensor],
     guidance_scale: float,
 ) -> torch.Tensor:
-    """
-    Guided velocity (flow) with CFG.
-    """
+
     cond_emb = prompt_pack["cond_emb"]
     uncond_emb = prompt_pack["uncond_emb"]
     cond_pool = prompt_pack["cond_pool"]
@@ -234,10 +188,6 @@ def _cfg_velocity_sd3(
     v_uncond, v_cond = v.chunk(2, dim=0)
     return v_uncond + guidance_scale * (v_cond - v_uncond)
 
-
-# ============================================================
-# Baselines (SD3)
-# ============================================================
 
 @torch.no_grad()
 def SDEditSD3(
@@ -275,107 +225,6 @@ def SDEditSD3(
         lat = step_out.prev_sample if hasattr(step_out, "prev_sample") else step_out[0]
 
     return lat
-
-
-@torch.no_grad()
-def ODEInvSD3(
-    pipe, scheduler, x0_src: torch.Tensor,
-    src_prompt: str, tar_prompt: str, negative_prompt: str,
-    T_steps: int, n_avg: int, cfg_src: float, cfg_tgt: float, n_min: int, n_max: int,
-) -> torch.Tensor:
-    device = x0_src.device
-    scheduler.set_timesteps(T_steps, device=device)
-
-    if not hasattr(scheduler, "sigmas"):
-        raise RuntimeError("ODEInvSD3 expects scheduler.sigmas (FlowMatchEulerDiscreteScheduler).")
-
-    timesteps = scheduler.timesteps
-    sigmas = scheduler.sigmas
-    if not isinstance(sigmas, torch.Tensor):
-        sigmas = torch.tensor(sigmas, device=device)
-    else:
-        sigmas = sigmas.to(device)
-
-    pack_src = _make_prompt_pack(pipe, src_prompt, negative_prompt, device)
-    pack_tgt = _make_prompt_pack(pipe, tar_prompt, negative_prompt, device)
-
-    # Forward (low->high): reverse
-    timesteps_fwd = torch.flip(timesteps, dims=[0])
-    sigmas_fwd = torch.flip(sigmas, dims=[0])
-
-    lat = x0_src
-    for i in range(T_steps):
-        t = timesteps_fwd[i]
-        sigma = sigmas_fwd[i]
-        sigma_next = sigmas_fwd[i + 1]
-        dt = sigma_next - sigma
-
-        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
-            v = _cfg_velocity_sd3(pipe, lat, t, pack_src, cfg_src)
-        lat = lat + dt * v
-
-    x_T = lat
-
-    # Backward (high->low): original
-    lat = x_T
-    for i in range(T_steps):
-        t = timesteps[i]
-        sigma = sigmas[i]
-        sigma_next = sigmas[i + 1]
-        dt = sigma_next - sigma  # negative
-
-        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
-            v = _cfg_velocity_sd3(pipe, lat, t, pack_tgt, cfg_tgt)
-        lat = lat + dt * v
-
-    return lat
-
-
-@torch.no_grad()
-def iRFDS_SD3(
-    pipe,
-    scheduler,
-    x0_src: torch.Tensor,
-    src_prompt: str,
-    tar_prompt: str,
-    negative_prompt: str,
-    T_steps: int,
-    n_avg: int,
-    cfg_src: float,
-    cfg_tgt: float,
-    n_min: int,
-    n_max: int,
-) -> torch.Tensor:
-    device = x0_src.device
-    scheduler.set_timesteps(T_steps, device=device)
-
-    pack_tgt = _make_prompt_pack(pipe, tar_prompt, negative_prompt, device)
-
-    lat = x0_src
-    fixed_noise = torch.randn_like(x0_src)
-
-    for i in range(T_steps):
-        t = scheduler.timesteps[i]
-
-        # x_src_t = x0 + sigma_i * noise
-        x_src_t = _add_noise_sd3_fm(scheduler, x0_src, fixed_noise, i)
-
-        # anchored noise injection
-        x_in = lat + (x_src_t - x0_src)
-
-        with torch.autocast("cuda", enabled=torch.cuda.is_available()), torch.inference_mode():
-            v = _cfg_velocity_sd3(pipe, x_in, t, pack_tgt, cfg_tgt)
-
-        step_out = scheduler.step(v, t, lat, return_dict=True)
-        lat = step_out.prev_sample if hasattr(step_out, "prev_sample") else step_out[0]
-
-    return lat
-
-
-
-# ============================================================
-# Pipeline + IO
-# ============================================================
 
 def set_seed(seed: int):
     random.seed(seed)
@@ -460,26 +309,7 @@ def run_one(
             T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
         )
 
-    if method == "ode_inv":
-        return ODEInvSD3(
-            pipe, scheduler, x0_src,
-            src_prompt, tgt_prompt, negative_prompt,
-            T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
-        )
-
-    if method == "irfds":
-        return iRFDS_SD3(
-            pipe, scheduler, x0_src,
-            src_prompt, tgt_prompt, negative_prompt,
-            T_steps, n_avg, cfg_src, cfg_tgt, n_min, n_max
-        )
-
     raise ValueError(f"Unknown method: {method}")
-
-
-# ============================================================
-# Main
-# ============================================================
 
 class Args:
     device_number = 0
@@ -574,6 +404,5 @@ def main():
 
     print("Done")
 
-
-
-main()
+if __name__ == "__main__":
+    main()

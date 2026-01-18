@@ -13,8 +13,6 @@ import torch
 from PIL import Image
 
 import yaml
-
-# CLIP (Transformers)
 from transformers import CLIPModel, CLIPProcessor
 
 # LPIPS
@@ -27,7 +25,7 @@ class EditCase:
     source_prompt: str
     target_prompt: str
     target_code: str
-    target_index: int  # Index of this target in the list (for tar_0, tar_1, etc.)
+    target_index: int
 
 
 def _first_present(d: Dict[str, Any], keys: List[str]) -> Optional[Any]:
@@ -40,7 +38,6 @@ def _first_present(d: Dict[str, Any], keys: List[str]) -> Optional[Any]:
 def load_edits_yaml(edits_path: Path) -> List[EditCase]:
     obj = yaml.safe_load(edits_path.read_text(encoding="utf-8"))
 
-    # root can be list or dict
     if isinstance(obj, list):
         items = obj
     elif isinstance(obj, dict):
@@ -63,9 +60,6 @@ def load_edits_yaml(edits_path: Path) -> List[EditCase]:
         if src_prompt is None:
             src_prompt = ""
 
-        # Targets can be:
-        # 1) target_prompts: [..], target_codes: [..]
-        # 2) targets: [{prompt, code}, ...]
         t_prompts = _first_present(it, ["target_prompts", "tgt_prompts", "prompts_target"])
         t_codes   = _first_present(it, ["target_codes", "tgt_codes", "codes_target"])
         targets   = _first_present(it, ["targets", "target_list", "edits", "target"])
@@ -81,11 +75,9 @@ def load_edits_yaml(edits_path: Path) -> List[EditCase]:
             for idx, (tp, tc) in enumerate(zip(t_prompts, t_codes)):
                 cases.append(EditCase(Path(img), str(src_prompt), str(tp), str(tc), idx))
         elif isinstance(t_prompts, list):
-            # no explicit codes → create codes from index
             for j, tp in enumerate(t_prompts):
                 cases.append(EditCase(Path(img), str(src_prompt), str(tp), f"t{j:02d}", j))
         else:
-            # single target?
             tp = _first_present(it, ["target_prompt", "tgt_prompt"])
             tc = _first_present(it, ["target_code", "tgt_code"])
             if tp is not None and tc is not None:
@@ -101,17 +93,13 @@ def pil_rgb(p: Path) -> Image.Image:
 
 
 def find_edited_image(run_dir: Path, case: EditCase) -> Optional[Path]:
-    """
-    Best-effort matcher: find an output file for this case.
-    Looks for images in subdirectories matching the source image and target index.
-    """
+
     if not run_dir.exists():
         return None
 
     exts = (".png", ".jpg", ".jpeg", ".webp")
     stem = case.image_path.stem.lower()
     
-    # Primary strategy: look for src_<stem>/tar_<idx>/ structure
     tar_folder_name = f"tar_{case.target_index}"
     src_pattern = f"src_{stem}"
     
@@ -121,26 +109,21 @@ def find_edited_image(run_dir: Path, case: EditCase) -> Optional[Path]:
         
         parent_path = str(candidate.parent).lower()
         
-        # Check if this is in the right tar_X folder for the right source image
         if tar_folder_name in parent_path and src_pattern in parent_path:
             if "output" in candidate.name.lower():
                 return candidate
     
-    # Fallback: less strict matching
     candidates = [p for p in run_dir.rglob("*") if p.suffix.lower() in exts]
     
-    # Try to find based on source image name
     matches = [p for p in candidates 
               if stem in str(p.parent).lower() or stem in p.name.lower()]
     
     if not matches:
-        # Last resort: just take any PNG/JPG in subdirectories
         matches = [p for p in candidates if p.parent != run_dir]
 
     if not matches:
         return None
 
-    # Prefer files with "output" in the name (generated images)
     output_matches = [p for p in matches if "output" in p.name.lower()]
     if output_matches:
         matches = output_matches
@@ -161,7 +144,6 @@ def clip_similarity(
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
     out = model(**inputs)
-    # Use normalized cosine similarity between pooled embeddings
     img_emb = out.image_embeds
     txt_emb = out.text_embeds
     img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
@@ -175,7 +157,7 @@ def lpips_distance(lpips_fn: lpips.LPIPS, device: torch.device, src: Image.Image
     # LPIPS expects torch tensors in [-1,1], shape [1,3,H,W]
     def to_t(im: Image.Image) -> torch.Tensor:
         arr = np.asarray(im).astype(np.float32) / 255.0  # [0,1]
-        t = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0)  # 1,3,H,W
+        t = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0)
         t = (t * 2.0) - 1.0
         return t.to(device)
 

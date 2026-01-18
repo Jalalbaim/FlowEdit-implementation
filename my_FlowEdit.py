@@ -1,5 +1,5 @@
-import os
 import gc
+import argparse
 import torch
 import numpy as np
 from PIL import Image
@@ -202,28 +202,38 @@ def sanity_one_step(pipe, x_src, emb_tar, cfg_tar, out_path="sanity_step.png", l
 
 
 def main():
-    model_id = os.environ.get("SD3_MODEL_ID", "stabilityai/stable-diffusion-3-medium-diffusers")
-    test_img = os.environ.get("TEST_IMG", "example_images/lighthouse.png")
-
-    prompt_src = os.environ.get(
-        "PROMPT_SRC",
-        "The image features a tall white lighthouse standing prominently on a hill, with a beautiful blue sky in the background."
-    )
-    prompt_tar = os.environ.get(
-        "PROMPT_TAR",
-        "The image features Big Ben clock tower standing prominently on a hill, with a beautiful blue sky in the background."
-    )
-
-    T = int(os.environ.get("T", "50"))
-    nmax = int(os.environ.get("NMAX", "33"))
-    nmin = int(os.environ.get("NMIN", "8"))
-    navg = int(os.environ.get("NAVG", "4"))
-    cfg_src = float(os.environ.get("CFG_SRC", "2"))
-    cfg_tar = float(os.environ.get("CFG_TAR", "10"))
-    seed = int(os.environ.get("SEED", "0"))
-
-    drop_t5 = os.environ.get("DROP_T5", "1") == "1"
-    low_vram_cfg = os.environ.get("LOW_VRAM_CFG", "1") == "1"
+    parser = argparse.ArgumentParser(description="FlowEdit Image Editing")
+    parser.add_argument("--image", type=str, required=True, help="Path to the input image")
+    parser.add_argument("--prompt_src", type=str, required=True, help="Source prompt describing the input image")
+    parser.add_argument("--prompt_tar", type=str, required=True, help="Target prompt for the edited image")
+    parser.add_argument("--T", type=int, default=50, help="Number of timesteps (default: 50)")
+    parser.add_argument("--nmax", type=int, default=33, help="Maximum n for FlowEdit loop (default: 33)")
+    parser.add_argument("--nmin", type=int, default=8, help="Minimum n for FlowEdit loop (default: 8)")
+    parser.add_argument("--navg", type=int, default=4, help="Number of averages (default: 4)")
+    parser.add_argument("--cfg_src", type=float, default=2.0, help="CFG scale for source (default: 2.0)")
+    parser.add_argument("--cfg_tar", type=float, default=10.0, help="CFG scale for target (default: 10.0)")
+    parser.add_argument("--seed", type=int, default=0, help="Random seed (default: 0)")
+    parser.add_argument("--model_id", type=str, default="stabilityai/stable-diffusion-3-medium-diffusers", 
+                        help="Model ID (default: stabilityai/stable-diffusion-3-medium-diffusers)")
+    parser.add_argument("--drop_t5", action="store_true", help="Drop T5 text encoder")
+    parser.add_argument("--low_vram_cfg", action="store_true", default=True, help="Use low VRAM CFG mode (default: True)")
+    parser.add_argument("--output", type=str, default="flowedit_out.png", help="Output image path (default: flowedit_out.png)")
+    
+    args = parser.parse_args()
+    
+    model_id = args.model_id
+    test_img = args.image
+    prompt_src = args.prompt_src
+    prompt_tar = args.prompt_tar
+    T = args.T
+    nmax = args.nmax
+    nmin = args.nmin
+    navg = args.navg
+    cfg_src = args.cfg_src
+    cfg_tar = args.cfg_tar
+    seed = args.seed
+    drop_t5 = args.drop_t5
+    low_vram_cfg = args.low_vram_cfg
 
     print("-" * 60)
     print(f"seed={seed}  T={T}  nmax={nmax}  nmin={nmin}  navg={navg}  cfg_src={cfg_src}  cfg_tar={cfg_tar}")
@@ -277,8 +287,8 @@ def main():
     )
 
     out_img = decode_latents_to_image(pipe, z_out)
-    out_img.save("flowedit_out.png")
-    print("Saved: flowedit_out.png")
+    out_img.save(args.output)
+    print(f"Saved: {args.output}")
 
     # cleanup
     del pipe

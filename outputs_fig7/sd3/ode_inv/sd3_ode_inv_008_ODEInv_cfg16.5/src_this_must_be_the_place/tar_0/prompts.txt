@@ -1,4 +1,0 @@
-Source prompt: A large, colorful wall with a neon sign that reads "this must be the place."
-Target prompt: A large, colorful wall with a neon sign that reads "IPP must be the place."
-Seed: 42
-Sampler type: SD3
