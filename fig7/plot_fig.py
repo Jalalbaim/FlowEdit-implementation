@@ -10,16 +10,10 @@ import matplotlib.pyplot as plt
 
 STYLE = {
     # SD3 panel
-    ("sd3", "ode_inv"):  dict(marker="^", linestyle="-",  color="#2ca02c", label="ODE Inv."),
+    # ("sd3", "ode_inv"):  dict(marker="^", linestyle="-",  color="#2ca02c", label="ODE Inv."),
     ("sd3", "sdedit"):   dict(marker="o", linestyle="-",  color="#ffbf00", label="SDEdit"),
-    ("sd3", "irfds"):    dict(marker="o", linestyle="None", color="#d62728", label="iRFDS"),
+    # ("sd3", "irfds"):    dict(marker="o", linestyle="None", color="#d62728", label="iRFDS"),
     ("sd3", "flowedit"): dict(marker="s", linestyle="-",  color="#1f77b4", label="Ours"),
-    # FLUX panel
-    ("flux", "ode_inv"):  dict(marker="^", linestyle="--", color="#2ca02c", label="ODE Inv."),
-    ("flux", "sdedit"):   dict(marker="o", linestyle="--", color="#ffbf00", label="SDEdit"),
-    ("flux", "rf_inv"):   dict(marker="D", linestyle="--", color="#9467bd", label="RF Inv."),
-    ("flux", "rf_edit"):  dict(marker="p", linestyle="--", color="#ff7f0e", label="RF Edit"),
-    ("flux", "flowedit"): dict(marker="s", linestyle="--", color="#1f77b4", label="Ours"),
 }
 
 
@@ -102,7 +96,7 @@ def main():
     df_sd3 = df[df["model"] == "sd3"].copy()
     df_flux = df[df["model"] == "flux"].copy()
 
-    fig, axes = plt.subplots(1, 1, figsize=(10, 4), dpi=160)
+    fig, axes = plt.subplots(1, 1, figsize=(5, 4), dpi=160)
 
     # Use auto_limits=True to adjust axes to your actual data
     plot_panel(axes, df_sd3, "Stable Diffusion 3", auto_limits=True)
